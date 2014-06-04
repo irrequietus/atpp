@@ -509,13 +509,186 @@ the eagerly evaluated constant expressions used with the operators.
 \begin{align}
 \underset{\forall n,i,j \in \mathbb{Z}_{\geq0} \mid{} 0 \leq i \leq j}{|\overline{T}\{i,j\}[n]|} &= (j-i)\times{n}
 \end{align}
-\p From this of course, the relation of the proposed pack magnitude with the new operators applied on template
-parameter pack with the valid C++11/C++14 semantics is trivial to understand:
-\begin{align}
-|\overline{T}\{0,|\overline{T}|\}[1]| &= |\overline{T}| \equiv sizeof...(T)
-\end{align}
 
-\subsubsection{Substitutive ordering as an extension of partial ordering}
+\section{Accessors and typelists}
+
+\subsubsection{Accessing individual elements in annotated and non-annotated packs}
+\p Following pack declaration and after matching has occured, there is the problem of specifying individual access to elements being contained in said expansion.
+The semantic context of the interval annotator is overloaded to be that of an individual element accessor in the definition body of a class or function template.
+Individual access is specified by the annotated pack identifier without ellipsis surrounding it, followed by anchor annotation whose constant expression is the index of the type we wish to refer to.
+
+\p Within the definition body of a function template, class template and any combination of functions, classes, whether in template form or not that are currently allowed in C++ to use as members whenever applicable annotated expansion can be used in anchor or accessor form.
+The following examples illustrate how this can work without causing conflicts of any kind, given substitutive ordering.
+\begin{enumerate}
+\item \p Given a variadic class template with an annotated template pack $\overline{T}\{3,6\}$, write the partial class specialization gaining matching priority for a magnitude $|\overline{T}| = 5$ containing a static function accepting the extended parameter pack in its argument list and returning std::tuple with the pack expanded in reverse order.
+\begin{minted}{c++}
+template<typename... T{3,6}>            /* interval of [3,6) */
+struct class_template<T...{5}> {        /* match when sizeof...(T) == 5 */
+    /* std::tuple for T...{5}, reversed */     /* T... can be used! */
+    static std::tuple<T{4},T{3},T{2},T{1},T{0}> function(T...{5}) {
+        T{0} t0; /* example of a declaration within definition */
+                 /* implementation here */
+    }
+};
+\end{minted}
+\item \p Another example using a $\overline{T}\{4,6\}$ pack where by convention we intend to pass template parameter types unique to each other is the following. Notice that if what is abstracted in $\overline{T}\{4,6\}$ is not really unique, member functions with the same signature will produce ambiguous overloads, as expected by the current C++ standard.
+\begin{minted}{c++}
+template<typename... T{4,6}>
+struct class_template<T...{4}> {
+    static void member_function(T{0}) {}
+    static void member_function(T{1}) {}
+    static void member_function(T{2}) {}
+    static void member_function(T{3}) {}
+};
+\end{minted}
+\item\p Anchored pack expansion is NOT legal to use for any specified anchor expression if an anchor has already been set in a dependent template parameter list, because that would make the parameters involved non-deducible.
+\begin{minted}{c++}
+template<typename... T{4,6}, typename... X>
+struct class_template<T...{5}, X...> /* anchored to 5  for ...T{4,6} */
+     : class_template<T...{4}>       /* error, pack has already been anchored */
+{};
+\end{minted}
+\item\p Individual accessors are not anchors and they are not ambiguously annotated with any accompanying ellipsis, so class template partial specialization who have already used anchored annotation in expansion can mix freely with individual accessors provided an interval anchor has already been set in an annotated expansion.
+\begin{minted}{c++}
+template<typename... T{4,6}, typename... X>
+struct class_template<T...{4}, X...>        /* anchored to 4  for ...T{4,6} */
+     : class_template<T{1},T{2},T{3},X...>  /* ok, accessor expressions */
+{ /* doing something interesting with T{0} here... */ };
+\end{minted}
+\item\p An individual accessor and an anchored expansion for the same annotated pack can coexist in the same parameter list, but not with the interval annotation they are derived from.
+This is congruent to the character of standard compliant pack declaration and expansion.
+\begin{minted}{c++}
+ /* This is legal, T...{5} is "fixed", accessors and anchor not in the same
+  * template parameter list as the annotated interval pack declaration */
+template<typename...T{2,6}>
+struct class_template<T...{5}> {
+    static void function(T{4},T...{5},T{4}) {}
+ /* static void function(T{4},T...,T{4}) {} is equivalent; anchor = 5 already */  
+};
+\end{minted}
+\end{enumerate}
+\subsubsection{Implementing typelists using annotated packs}
+\p Accessors can be used with parameter packs in order to access individual elements in a non-annotated template parameter pack as the ones currently present in C++.
+The following examples implement individual access and change for types contained within parameter packs in a class template used as type vector.
+Notice the use of the class template partial specialization syntax and how this is combined with constant expressions to yield the desired result.
+We will do so by first definining a set of class templates whose partial specializations will provide the pattern matching constructs which we will exploit through substitutive ordering in order to convert non-annotated parameter pack operations into annotated versions.
+\begin{minted}{c++}
+
+struct error_type {};
+/* the typevector is actually just a holder for a pack */
+template<typename... X> struct typevector {};
+
+/* some initial definitions for cases where a typevector is not used */
+template<std::size_t N, typename> struct at_pos { typedef error_type type; };
+template<std::size_t N, typename> struct change_at { typedef error_type type; };
+template<std::size_t N, typename> struct split_at { typedef error_type type; };
+\end{minted}
+
+\begin{minted}{c++}
+/* implementation of at_pos */
+template< std::size_t N
+        , typename... T{0,(N < sizeof...(T) ? sizeof...(T) : 0)}>
+struct at_pos<N,typevector<T...>> /* T...{} is the 'catch-all' for T */
+{ typedef T{N} type; };
+\end{minted}
+
+\begin{minted}{c++}
+/* implementation of change_at */
+template< std::size_t N
+        , typename X
+        , typename Z
+        , typename... T{0,(N < sizeof...(T) ? sizeof...(T) : 0)} /* T{0,0} ! */
+        , typename... R >
+struct change_at<N,X,typevector<T...{N-1},Z,R...>>
+{ typedef typevector<T...{N-1},X,R...> type; };
+\end{minted}
+
+\begin{minted}{c++}
+/* implementation of split_at */
+template< std::size_t N
+        , typename... L{0,(N < sizeof...(L) ? sizeof...(L) : 0)}
+        , typename... R{N,(N < sizeof...(R) ? sizeof...(R) : 0)} >
+struct split_at<N,typevector<L...{N-1},R...{sizeof...(R)}>> { /* anchored ! */
+    typedef typevector<L...> left;                      /* already anchored */
+    typedef typevector<R...> right;                     /* already anchored */
+};
+\end{minted}
+
+\begin{minted}{c++}
+template<std::size_t N, typename... T> /* triggered when T{0,0}! */
+struct at_pos<N,typevector<T...>> { typedef error_type type; };
+
+template<std::size_t N, typename... T> /* triggered when T{0,0}! */
+struct change_at<N,typevector<T...>> { typedef error_type type; };
+
+template<std::size_t N, typename... T> /* triggered when T{0,0}! */
+struct split_at<N,typevector<T...>> { typedef error_type type; };
+
+\end{minted}
+\p Given that in the context of the proposal $\bm{\overline{T}\{0,|\overline{T}|\}[1] \equiv \overline{T}\{0,|\overline{T}|\}}$ while $\bm{\overline{T}\{0,|\overline{T}|\}[0] \equiv \emptyset{}}$ with the latter invoking SFINAE since it would resolve to an empty set (making the template parameter list invalid) and $\overline{T}\{0,|\overline{T}|\}\equiv{\overline{T}\{|\overline{T}|\}}\equiv{\overline{T}\{\}}$, we can exploit this behaviour of the repeat annotator for an interesting rewrite for one of the class template partial specializations presented before:
+\begin{minted}{c++}
+template<std::size_t N, typename... T{}[N < sizeof...(T)]>
+struct at_pos<N,typevector<T...>>
+{ typedef T{N} type; };
+\end{minted}
+
+
+\subsubsection{On an eventual overload of the repeater pack annotator}
+
+\p While for the time being we have focused on this using modified symbolic notation, there is something else to be said about the ($[]$) operator.
+Given that currently a C++ template parameter pack has template parameter types of the same "kind" (non-type, type, template-type) it is consequential to assume that a class template with a template parameter in its template parameter list providing a valid match for that "kind", can be used as a template meta-function for the entirety of the pack.
+One exciting possibility would be to allow the contextual overload of ($[]$) to not just be a repeater, but to accept a class templates instead of constant expressions, allowing for fundamental but high order operations like folds to occur. At the current status of this draft, the semantics of such a possibility are underway.
+
+\subsection{Simple pack annotation examples}
+\subsubsection{Annotated parameter packs and substitutive ordering}
+\p Every annotated pack is declared by a preceding ellipsis (symbol: $\bm{...}$) and its identifier followed by the janus annotator (symbol: $\bm{\{\}}$).
+The latter either contains a single eagerly evaluated constant expression or two such expressions separated by a comma.
+It is called anchoring annotator in the first case, interval annotator in the second case.
+
+\p Either form is optionally followed by the pattern annotator (symbol: $\bm{[]}$), containing a single eagerly evaluated constant expression equal to the times the ordered sequence of types described by the janus annotator is to be repeated in order to have a match. Both annotators have empty forms that are equivalent to $\{0,sizeof...(T)\}$ and $\{sizeof...(T)\}$ for the empty janus annotator and $[1]$ for the empty pattern annotator.
+
+\p Templates with parameter lists containing annotatively declared packs have partial ordering priority to their variadic pack counterparts, even when their annotation is equivalent to variadic packs.
+The effect of annotation is substitution, due to an annotated parameter pack expressing explicit intent on behalf of the programmer to contain a specified number of types, even if that means substituting an equivalent pack declared non-annotatively.
+This is called {\textbf{\em{substitutive ordering}}}.
+
+\p Due to this substitution, any combination of $\{0,0\}$, $\{0\}$ with $[0]$ result to SFINAE being invoked.
+These mean that the parameter pack cannot be declared through the janus annotators, while it cannot be repeated even once for the zero pattern.
+SFINAE is also being invoked when the interval annotator does not specify a valid left-closed, right-open interval of integers greater than or equal to zero.
+A candidate match is then successful if by partial ordering any other template containing non-annotated packs in equivalent placement can be found.
+
+\p The following code snippets give the reader an overview of how annotated pack declaration works through parameter list examples.
+\begin{enumerate}
+\item\p This first trio of template parameter lists are equivalent and would cause an ambiguous match if any combination of the two was found within a source file, but they would match over the non-annotated parameter packs despite them being variadic because of substitutive ordering.
+\begin{minted}{c++}
+/*01*/ template<typename...T{}[]>     /* matches over template<typename... T> */
+/*02*/ template<typename...T{}[1]>    /* matches over template<typename... T> */
+/*03*/ template<typename...T{}>       /* matches over template<typename... T> */
+\end{minted}
+
+\item\p For the same reasons, this is valid for every annotated pack. Substitutive ordering enforces the same preferential priority when packs of non-type, type, template-template type parameters are being declared annotatively over their variadic counterparts.
+\begin{minted}{c++}
+/*04*/ template<typename...T{5}>      /* fixed amount of 5 types */
+/*05*/ template<typename...T{5}[2]>   /* fixed of 5, match if 1 repeat */
+/*06*/ template<typename...T{3,9}[2]> /* [3, 9), match if 1 repeat */
+/*07*/ template<typename...T{3,9}>    /* provide a match for [3,9) types */
+/*08*/ template<template<typename...T{}[]>     class>
+/*09*/ template<template<typename...T{}[1]>    class>
+/*10*/ template<template<typename...T{}>       class>
+/*11*/ template<template<typename...T{5}>      class>
+/*12*/ template<template<typename...T{5}[2]>   class>
+/*13*/ template<template<typename...T{3,9}[2]> class>
+/*14*/ template<template<typename...T{3,9}>    class>
+/*15*/ template<template<typename...T{}[]>     class...P{}[]>
+/*16*/ template<template<typename...T{}[1]>    class...P{3}[2]>
+/*17*/ template<template<typename...T{4}>      class...P{4}>
+/*18*/ template<template<typename...T{5}>      class...P>
+/*19*/ template<template<typename...T{5}[2]>   class...P{1,3}[4]>
+/*20*/ template<template<typename...T{3,9}[2]> class...P{}[2]>
+/*21*/ template<template<typename...T{3,9}>    class...P{2}>
+\end{minted}
+\end{enumerate}
+
+\subsubsection{Substitutive ordering in declaration and expansion}
 \p By extending the field where partial ordering applies, annotated packs allow for the introduction of substitutive ordering.
 Such ordering means that annotated packs gain matching precedence over undetermined packs as representing the set of all deterministic type-safe expansions of an undetermined pack with whose rank equals that of the annotation interval.
 There are some constraints that must be enforced in order for pack annotation to be compatible with existing C++11/C++14 practices.
@@ -575,163 +748,6 @@ template<typename... T{2,10}>
 void function_template(T...) { /* illegal, error */}
 \end{minted}
 \end{enumerate}
-\subsubsection{Accessing individual elements in annotated and non-annotated packs}
-\p Following pack declaration and after matching has occured, there is the problem of specifying individual access to elements being contained in said expansion.
-The semantic context of the interval annotator is overloaded to be that of an individual element accessor in the definition body of a class or function template.
-Individual access is specified by the annotated pack identifier without ellipsis surrounding it, followed by anchor annotation whose constant expression is the index of the type we wish to refer to.
-
-\p Within the definition body of a function template, class template and any combination of functions, classes, whether in template form or not that are currently allowed in C++ to use as members whenever applicable annotated expansion can be used in anchor or accessor form.
-
-\p Some examples follow explaining these two notions
-\begin{enumerate}
-\item \p Given a variadic class template with an annotated template pack $\overline{T}\{3,6\}$, write the partial class specialization gaining matching priority for a magnitude $|\overline{T}| = 5$ containing a static function accepting the extended parameter pack in its argument list and returning std::tuple with the pack expanded in reverse order.
-\begin{minted}{c++}
-template<typename... T{3,6}>            /* interval of [3,6) */
-struct class_template<T...{5}> {        /* match when sizeof...(T) == 5 */
-    /* std::tuple for T...{5}, reversed */     /* T... can be used! */
-    static std::tuple<T{4},T{3},T{2},T{1},T{0}> function(T...{5}) {
-        T{0} t0; /* example of a declaration within definition */
-                 /* implementation here */
-    }
-};
-\end{minted}
-\item \p Another example using a $\overline{T}\{4,6\}$ pack where by convention we intend to pass template parameter types unique to each other is the following. Notice that if what is abstracted in $\overline{T}\{4,6\}$ is not really unique, member functions with the same signature will produce ambiguous overloads, as expected by the current C++ standard.
-\begin{minted}{c++}
-template<typename... T{4,6}>
-struct class_template<T...{4}> {
-    static void member_function(T{0}) {}
-    static void member_function(T{1}) {}
-    static void member_function(T{2}) {}
-    static void member_function(T{3}) {}
-};
-\end{minted}
-\item\p Anchored pack expansion is NOT legal to use for any specified anchor expression if an anchor has already been set in a dependent template parameter list, because that would make the parameters involved non-deducible.
-\begin{minted}{c++}
-template<typename... T{4,6}, typename... X>
-struct class_template<T...{5}, X...> /* anchored to 5  for ...T{4,6} */
-     : class_template<T...{4}>       /* error, pack has already been anchored */
-{};
-\end{minted}
-\item\p Individual accessors are not anchors and they are not ambiguously annotated with any accompanying ellipsis, so class template partial specialization who have already used anchored annotation in expansion can mix freely with individual accessors provided an interval anchor has already been set in an annotated expansion.
-\begin{minted}{c++}
-template<typename... T{4,6}, typename... X>
-struct class_template<T...{4}, X...>        /* anchored to 4  for ...T{4,6} */
-     : class_template<T{1},T{2},T{3},X...>  /* ok, accessor expressions */
-{ /* doing something interesting with T{0} here... */ };
-\end{minted}
-\item\p An individual accessor and an anchored expansion for the same annotated pack can coexist in the same parameter list, but not with the interval annotation they are derived from.
-This is congruent to the character of standard compliant pack declaration and expansion.
-\begin{minted}{c++}
- /* This is legal, T...{5} is "fixed", accessors and anchor not in the same
-  * template parameter list as the annotated interval pack declaration */
-template<typename...T{2,6}>
-struct class_template<T...{5}> {
-    static void function(T{4},T...{5},T{4}) {}
- /* static void function(T{4},T...,T{4}) {} is equivalent; anchor = 5 already */  
-};
-\end{minted}
-\item\p Accessors can be used with parameter packs in order to access individual elements in a non-annotated template parameter pack as the ones currently present in C++.
-The following example implements individual access and change for types contained within parameter packs in a class template used as type vector.
-Notice the use of the class template partial specialization syntax and how this is combined with constant expressions to yield the desired result.
-\begin{minted}{c++}
-
-struct error_type {};
-/* the typevector is actually just a holder for a pack */
-template<typename... X> struct typevector {};
-
-/* some initial definitions for cases where a typevector is not used */
-template<std::size_t N, typename> struct at_pos { typedef error_type type; };
-template<std::size_t N, typename> struct change_at { typedef error_type type; };
-template<std::size_t N, typename> struct split_at { typedef error_type type; };
-
-/* implementation of at_pos */
-template< std::size_t N
-        , typename... T{0,(N < sizeof...(T) ? sizeof...(T) : 0)}>
-struct at_pos<N,typevector<T...>> /* T...{} is the 'catch-all' for T */
-{ typedef T{N} type; };
-
-/* implementation of change_at */
-template< std::size_t N
-        , typename X
-        , typename Z
-        , typename... T{0,(N < sizeof...(T) ? sizeof...(T) : 0)} /* T{0,0} ! */
-        , typename... R >
-struct change_at<N,X,typevector<T...{N-1},Z,R...>>
-{ typedef typevector<T...{N-1},X,R...> type; };
-
-/* implementation of split_at */
-template< std::size_t N
-        , typename... L{0,(N < sizeof...(L) ? sizeof...(L) : 0)}
-        , typename... R{N,(N < sizeof...(R) ? sizeof...(R) : 0)} >
-struct split_at<N,typevector<L...{N-1},R...{sizeof...(R)}>> { /* anchored ! */
-    typedef typevector<L...> left;                      /* already anchored */
-    typedef typevector<R...> right;                     /* already anchored */
-};
-
-template<std::size_t N, typename... T> /* triggered when T{0,0}! */
-struct at_pos<N,typevector<T...>> { typedef error_type type; };
-
-template<std::size_t N, typename... T> /* triggered when T{0,0}! */
-struct change_at<N,typevector<T...>> { typedef error_type type; };
-
-template<std::size_t N, typename... T> /* triggered when T{0,0}! */
-struct split_at<N,typevector<T...>> { typedef error_type type; };
-
-\end{minted}
-\item\p Given that in the context of the proposal $\bm{\overline{T}\{0,|\overline{T}|\}[1] \equiv \overline{T}\{0,|\overline{T}|\}}$ while $\bm{\overline{T}\{0,|\overline{T}|\}[0] \equiv \emptyset{}}$ with the latter invoking SFINAE since it would resolve to an empty set (making the template parameter list invalid) and $\overline{T}\{0,|\overline{T}|\}\equiv{\overline{T}\{|\overline{T}|\}}\equiv{\overline{T}\{\}}$, we can exploit this behaviour of the repeat annotator for an interesting rewrite for one of the class template partial specializations presented before:
-\begin{minted}{c++}
-template<std::size_t N, typename... T{}[N < sizeof...(T)]>
-struct at_pos<N,typevector<T...>>
-{ typedef T{N} type; };
-\end{minted}
-\end{enumerate}
-
-\subsubsection{On an eventual overload of the repeater pack annotator}
-
-\p While for the time being we have focused on this using modified symbolic notation, there is something else to be said about the ($[]$) operator.
-Given that currently a C++ template parameter pack has template parameter types of the same "kind" (non-type, type, template-type) it is consequential to assume that a class template with a template parameter in its template parameter list providing a valid match for that "kind", can be used as a template meta-function for the entirety of the pack.
-One exciting possibility would be to allow the contextual overload of ($[]$) to not just be a repeater, but to accept a class templates instead of constant expressions, allowing for fundamental but high order operations like folds to occur. At the current status of this draft, the semantics of such a possibility are underway.
-
-\subsection{Simple pack annotation examples}
-\subsubsection{Annotated template parameter pack declaration}
-\p The following examples refer to syntax that should be used on templateparameter lists for the optional pack notation.
-The notation forces the pack to expand to a specific pattern depending on what the template is to be instantiated with, but in all cases where $\{\}$ is used with a constant expression, the parameter list in declaration is equivalent to the list the same template would have had if it was not variadic.
-We will refer to this as the "substitution principle".
-The effect of the annotation is to substitute for a set of templates that would otherwise have to be written because template parameter packs would not suffice alone for the patterns we want to express.
-
-\begin{minted}{c++}
-/*01*/ template<typename...T{}[]>     /* template<typename... T> */
-/*02*/ template<typename...T{}[1]>    /* template<typename... T> */
-/*03*/ template<typename...T{}>       /* template<typename... T> */
-/*04*/ template<typename...T{5}>      /* fixed amount of 5 types */
-/*05*/ template<typename...T{5}[2]>   /* fixed of 5, match if 1 repeat */
-/*06*/ template<typename...T{3,9}[2]> /* [3, 9), match if 1 repeat */
-/*07*/ template<typename...T{3,9}>    /* provide a match for [3,9) types */
-/*08*/ template<template<typename...T{}[]>     class>
-/*09*/ template<template<typename...T{}[1]>    class>
-/*10*/ template<template<typename...T{}>       class>
-/*11*/ template<template<typename...T{5}>      class>
-/*12*/ template<template<typename...T{5}[2]>   class>
-/*13*/ template<template<typename...T{3,9}[2]> class>
-/*14*/ template<template<typename...T{3,9}>    class>
-/*15*/ template<template<typename...T{}[]>     class...P{}[]>
-/*16*/ template<template<typename...T{}[1]>    class...P{3}[2]>
-/*17*/ template<template<typename...T{4}>      class...P{4}>
-/*18*/ template<template<typename...T{5}>      class...P>
-/*19*/ template<template<typename...T{5}[2]>   class...P{1,3}[4]>
-/*20*/ template<template<typename...T{3,9}[2]> class...P{}[2]>
-/*21*/ template<template<typename...T{3,9}>    class...P{2}>
-\end{minted}
-
-\p The pack annotation examples show how the "substitution principle" places both annotated and non-annotated parameter packs into a continuum: the annotated packs are more constrained, while providing a series of templates that match the different template declaration parameter lists.
-If and only if an annotated pack has annotation involving the $\{\}$ annotator will it be allowed to appear without as a non-terminal identifier:
-
-\begin{minted}{c++}
-/* missing */
-\end{minted}
-
-\p In that sense, one could paragonize the fully annotated version with a vertical repetition construct in the example of $\overline{T}\{3,9\}[2]$ where different template declaration parameter lists refer to the same template definition body.
-The problem of how to deal with these different templates when a different definition body is required, is addressed in the subsection about annotated template parameter pack expansion.
 
 \section{Technical specification}
 \subsection{Grammar Additions}
