@@ -1,0 +1,747 @@
+%%
+%% George Makrydakis <irrequietus@gmail.com>
+%% Copyright (C) 2014, All Rights Reserved
+%%
+%% This is my first C++ proposal
+
+\documentclass[ notitlepage
+              , a4paper
+              , twoside ]{article}
+
+\usepackage{fontspec}
+\usepackage[T1]{fontenc}
+\usepackage{charter}
+\usepackage[expert]{mathdesign}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{polyglossia}
+\usepackage{xunicode}
+\usepackage{xltxtra}
+\usepackage{csquotes}
+\usepackage{tabularx}
+
+\usepackage[ usenames
+           , dvipsnames ]{xcolor}
+
+\usepackage[ outer=3.4cm
+           , heightrounded
+           , marginparwidth=6cm
+           , marginparsep=0.5cm ]{geometry}
+
+\usepackage[pdfauthor={George Makrydakis},
+            pdftitle={Annotating C++ template parameter packs},
+            pdfsubject={},
+            pdfkeywords={ C++
+                        , templates
+                        , meta-programming
+                        , template parameters
+                        , template parameter packs
+                        , pattern generation },
+            pdfproducer={XeLateX with hyperref},
+            unicode=true,
+            pdfencoding=auto,
+            pdfcreator={Xelatex}]{hyperref}
+
+\usepackage{newtxtext}
+\usepackage{newtxmath}
+\usepackage{upgreek}
+\usepackage{bookmark}
+\usepackage{bm}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{tikz}
+\usepackage{minted}
+\usepackage{tcolorbox}
+\usepackage{etoolbox}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{textcomp}
+\usepackage{mparhack}
+\usepackage{draftwatermark}
+\usepackage[nottoc,numbib]{tocbibind}
+\usepackage[nodate]{datetime}
+\usepackage{everypage} %%% solving page layout problems in different pages
+\usepackage[backend=biber,sorting=nyt,natbib
+           , doi=false]{biblatex}
+
+%%% getting git revision information
+\input{gitrev.tex}
+
+%%% clearing month, day
+\AtEveryBibitem{\clearfield{month}}
+\AtEveryBibitem{\clearfield{day}}
+%%% nobreakspace fix           
+\DeclareTextCommandDefault{\nobreakspace}{\leavevmode\nobreak\ } 
+            
+%%% defining some colors I like using
+\definecolor{tone0}{RGB}{190,58,238}
+\definecolor{tone1}{RGB}{1,41,110}
+\definecolor{tone3}{HTML}{002B36}
+
+%%% the main language of this document is of course english.
+\setmainlanguage{english}
+
+%%% setting page style
+\pagestyle{fancyplain}
+
+%%% paragraph formatting
+\setlength{\parskip}{0.2cm plus1mm minus1mm}
+\setlength{\abovedisplayskip}{12pt}
+\setlength{\abovedisplayshortskip}{12pt}
+\setlength{\belowdisplayskip}{12pt}
+\setlength{\belowdisplayshortskip}{12pt}
+
+%%% settings for hyperlinks
+\hypersetup{ unicode=true
+           , colorlinks=true
+           , linkcolor=Blue
+           , citecolor=MidnightBlue
+           , filecolor=magenta
+           , urlcolor=magenta }
+
+%%% activating everypage hooks for header geometry issues
+\AddEverypageHook{%
+    \ifthenelse{\value{page}=1}%
+    {\renewcommand{\headheight}{94pt}}
+    {\renewcommand{\headrulewidth}{0.0pt}}%
+    {\renewcommand{\headrulewidth}{0.4pt}}%
+}
+
+%%% making 'minted' segments embedded into a colorbox           
+\AtBeginEnvironment{minted}{\fontsize{8}{8}\selectfont}
+    \BeforeBeginEnvironment{minted}{\begin{tcolorbox}}
+\AfterEndEnvironment{minted}{\end{tcolorbox}}
+
+\usemintedstyle{trac}
+
+%%% A macro for referring to non-type, type, template template parameter types.
+\newcommand{\typepack}[1]{$\bm{\uptau_{#1}$}}
+\newcommand{\epack}[1]{$\overset{...}{#1}$}
+
+%%% macros for numbering paragraphs, essentially the \p{} macro
+\newcommand{\parnum}{\bfseries\arabic{parcount}}
+\newcounter{parcount}
+\newcommand\p{%
+    \stepcounter{parcount}%
+    \leavevmode\marginpar[\hfill\parnum]{\parnum}%
+}
+
+%%% cleanup all information related to fancy headers
+\fancyhf{}
+
+%%% set footer information
+\fancyfoot[LO,RE]{\thepage{}\
+\center{Copyright \textcopyright{2014} George Makrydakis\\
+\texttt{irrequietus@gmail.com}}}
+
+%%% set header information. The first page header is slightly different
+\fancyhead[LE,RO]{\ifthenelse{\value{page}=1}{{\begin{tabular}{r l}\
+{\color{magenta}docnum} &  {\color{tone0} DEEMED IMMATURE} \\
+{\color{magenta}project} & Programming Language C++, EWG \\
+{\color{magenta}date} & \date{\today{} \currenttime{} EEST} \\
+{\color{magenta}revision} & \texttt{\GitShortRev{}} \\
+{\color{magenta}author} & George Makrydakis \\
+{\color{magenta}reply-to} & \texttt{irrequietus@gmail.com} \\
+{\color{magenta}for the kind attention of} & {\color{red}Ville Voutilainen}\\
+\end{tabular}}}{\slshape Annotating C++ template parameter packs\\
+\bf{{\color{magenta} \GitLongRev{} - \date{\today{} \currenttime{} EEST}}}}}
+    
+%%% setting the width of the header ruler
+\renewcommand{\headrulewidth}{0.2pt}
+    
+%%% watermark info for the draft stage
+\SetWatermarkLightness{0.942}
+\SetWatermarkScale{3}
+
+
+\setlength{\headheight}{30pt}
+
+%%% I do not want the language string present in each bibliography item.
+\renewbibmacro{in:}{}%
+\AtEveryBibitem{%
+  \clearlist{language}%
+}
+
+\addbibresource{annpacks.bib}
+
+
+
+\begin{document}
+
+\bookmark[dest=TitlePage]{Annotating C++ template parameter packs}
+
+\title{Annotating C++ template parameter packs}
+\author{George Makrydakis\\
+\texttt{irrequietus@gmail.com}\\\bf{{\
+\color{magenta}UNCORRECTED INCOMPLETE DRAFT
+\date{\bf{\today{} \currenttime{} EEST}}}}}
+\maketitle
+
+
+\begin{abstract}
+\p Parametric polymorphism in C++\cite{cpp11} is implemented through class and function templates whose parameter types refer to three different abstractions used for template declarations: template non-type, template type and template-template type parameters.
+Template arguments correspond to these three kinds of parameters and replace every one of the three kinds of template parameters during instantiation phase.
+A fourth kind of template parameter abstraction has been in the C++11 standard is referred to as template parameter packs, allowing variadic templates to be introduced and augmenting the expressivity of template meta-programming techniques.
+The current document aims to study a series of possible extensions to template parameter pack notation in order to allow for the generation of complex sequences of type patterns in both pack declaration and expansion.
+\end{abstract}
+
+\section{Introduction}
+\p Template parameter packs can be viewed as product types from a
+theoretical point of view, with cohere semantics in both their declaration
+and expansion within a given template parameter/ argument list. Their important
+sequence processing features used with other characteristics of the C++ language
+like partial class template specializations, tag dispatching, class and function
+template partial ordering, SFINAE, ADL, result into advanced code generation
+using C++ template meta-programming. This document explores the possibility
+of implementing advanced pattern generation techniques through template
+parameter packs, without introducing backwards incompatibilities and/or conflicts with
+established C++ practices, through optional notation
+accompanying template parameter pack declaration/expansion. In essence, optionally turn parameter packs 
+into constrained pattern generators instead of plain unconstrained pattern containers.
+
+\section{Motivation, scope, impact on the standard}
+
+\p With the proposed approach of optional pack notation, we can reduce the code
+boilerplate required for multiple class
+template partial specializations and multiple function templates in order to
+offer the most specialized implementation of algorithms for a particular sequence
+of type patterns.Extending template parameter
+pack notation without introducing backwards incompatibilities,
+that if generic enough, may obviate the need for complex and constrained
+uses of preprocessor meta-programming in a series of scenarios where
+C++ template and constexpr meta-programming are inadequate due to the
+nature of the patterns required to ge generated. Source code generation
+partially assisted through preprocessor meta-programming using both
+vertical and horizontal expansion/repetition patterns can be found in the
+critically acclaimed and peer-reviewed boost C++ libraries.
+\p In order to understand why such notation can be useful, we need to observe
+certain behaviours of parameter packs with pattern matching as intended in
+even simple cases of C++ template meta-programming.
+
+\subsection{Parameter packs and Pattern Matching}
+\p The following source code example is C++11/C++14 compliant and illustrates
+some simple ways through which manipulation of template parameter pack declaration
+and expansion are practiced. It becomes quite apparent that because of the
+abstraction packs offer, variadic template parameter and argument lists can be
+useful computational constructs during template instantiations. In the
+following example, a template
+parameter pack is declared, manipulated and expanded in a variety of ways
+fully compatible with the C++11/C++14 standard. Once compiled, the resulting
+binary prints a series of strings on the terminal that are dependent upon
+the C++ features used as computational devices during instantiation phase.
+
+\begin{minted}{c++}
+
+#include <cstdio>
+
+template<typename... Types_T>
+struct packed;
+
+template<typename Head, typename... Tail>
+struct packed<Head,Tail...> {
+    typedef packed<Tail...> pop_front;
+};
+
+template<>
+struct packed<>
+{ typedef packed<> pop_front; };
+
+template<typename... T>
+void function(packed<T...>) {
+    printf("%d types contained\n", sizeof...(T));
+    function(typename packed<T...>::pop_front());
+}
+
+template<typename... X, typename... Y>
+void function(packed<X...,long,Y...>) {
+    printf( "%d types contained and a long found!\n"
+          , sizeof...(X) + sizeof...(Y) + 1);
+    function(typename packed<X...,long,Y...>::pop_front());
+}
+
+template<typename T,typename...X>
+void function(packed<T,T,X...>) {
+    printf("%d IDENTICAL types found out of %d \n", 2, sizeof...(X)+3);
+    function(typename packed<T,T,X...>::pop_front());
+}
+
+template<typename X, typename Y, typename...T>
+void function(packed<X,Y,T...>) {
+    printf("just %d DIFFERENT types contained\n", 2 + sizeof...(T));
+    function(typename packed<X,Y,T...>::pop_front());
+}
+
+void function(packed<>) {
+    printf("no types contained anymore!\n");
+}
+
+int main() {
+   function(packed<char,short,short,long,short,int,int>());
+   return {};
+}
+
+\end{minted}
+
+\subsection{Context dependency of pack declaration and expansion}
+
+\p From the example above, it is evident that pattern matching during
+instantiation is evidently occuring even on specified
+ordered sequences of type patterns in the left bound of a template parameter/argument
+list. For this to happen, whenever template
+parameter packs are involved, they have to be allowed expansion into the actual
+ordered type sequences they abstract in order for things like partial
+ordering to be respected. This occurs only when the context where
+these packs appear in a template parameter list allows for the parameters
+involved to be deduced. Let's begin with a very simple duo of variadic class
+templates in the following code segment:
+
+\begin{minted}{c++}
+template<typename...>
+struct wrapper {};
+
+template<typename... T>
+struct some_template {
+    static void hello()
+    { printf("hello world!\n"); }
+};
+\end{minted}
+
+
+\p A few simple class template partial specializations
+can help illustrating when the pack declaration and expansion are allowed. Notice
+that in both specializations that follow, the template parameter pack is not
+expanded within the same template parameter list where it was declared and
+is ordered as the last argument used (right bound of the template argument
+list of the class template partial specialization). This allows for the pack to be expanded
+within a context where the totality of parameters turned arguments can be deduced,
+therefore correct and specialized instantiation to occur:
+
+\begin{minted}{c++}
+template<typename... X>
+struct some_template<wrapper<X...>,int> { /* X is alone! */
+    static void hello()
+    { printf("hello world from wrapper!\n"); }
+};
+
+template<typename... X>
+struct some_template<wrapper<int,X...>,int> { /* rightmost X! */
+    static void hello()
+    { printf("the first type in the wrapper is an int...\n"); }
+};
+\end{minted}
+
+\p The order of appearance in a given template parameter/argument list of a
+parameter pack respect to non-pack template parameters is the single most
+important constraint for allowing the deduction of all parameters involved
+and thus pack expansion. In the following example, due to the pack appearing
+before a non-pack parameter the compiler cannot deduce all the parameters
+involved when the pack is required to expand in the template argument
+list the following class template partial specialization:
+
+\begin{minted}{c++}
+template<typename... X>
+struct some_template<wrapper<X...,int>,int> { /* cannot deduce parameters! */
+    static void hello()
+    { printf("this code is wrong!"); }
+};
+
+template<typename...X>
+struct some_template<X...,int> { /* cannot deduce parameters! */
+    static void hello()
+    { printf("this code is also wrong!\n"); }
+};
+\end{minted}
+
+\p This behaviour is consistent in both class template partial specializations
+and function template declarations even when multiple template parameter
+pack declarations exist in a given template parameter/argument list. An example
+where these are deployed follows. Notice the ordering of the packs required to expand
+within each instantiation of class template I, allowing for all parameters
+to be deduced:
+
+\begin{minted}{c++}
+/*  Multiple pack expansion in a context where parameters can be deduced! */
+template<typename... A, typename... B, template<typename...> class I>
+void function(I<A...>,I<B...>)
+{ printf("multiple parameter packs in function templates are ok!\n"); }
+\end{minted}
+
+\p As useful as template parameter packs are, their
+declaration and expansion semantics can only currently abstract an ordered sequence
+of parameters of "unconstrained" length in both scenarios. Parameter packs
+cannot expand
+within the same template parameter list where they are declared because of
+their unbound expansion compromising parameter deduction and partial
+ordering in both class and function templates. The same rule is
+valid for template argument lists. However,
+unsurprisingly, the following code
+works because the parameter pack is required to expand within class template
+scope, where the all parameters have already been deduced during
+instantiation and thus the argument list of the enclosed member function
+is valid.:
+
+\begin{minted}{c++}
+template<typename... X>
+struct working {
+    typedef wrapper<X...,int> type;
+    
+    static void function(X...,int) {
+        printf("surprised to see me?\n");
+    }
+};
+\end{minted}
+
+\p In essence, template parameter pack ordering is constrained to be right-bound
+in parameter and argument lists due to its unconstrained expansion
+compromising the deducibility of all the parameters involved, a feature
+necessary for pattern matching to occur.
+By specifying certain constraints in pack declaration
+and/or expansion we would be forcing the creation of specific template parameter
+and argument lists in contexts where parameter deduction is unattainable. In
+the simplest case, expanding a parameter pack in the left bound of a parameter/argument
+list with such constraints
+would yield a finite amount of parameters ("fixed pack size") of the same type
+(non-type,type, template type) for which partial ordering rules would be
+safe to apply. In the more general case, also decide which of the types
+contained already present in the pack should expand when certain constraints are met,
+allowing again the selective nature of partial ordering to occur.
+\section{Design Decisions, from theory to practice}
+\subsection{Symbolic notation for theoretical considerations}
+
+\p For the purposes of this
+document, template parameter packs in use within a given translation unit
+will constitute a theoretical set (\typepack{\pi}) of template non-type
+(\typepack{0}), template type (\typepack{1}) and template template type
+parameters (\typepack{2}).  Capital letters with an overline
+(e.g. $\bm{\overline{T}}$) refer to the declaration of a specific template parameter
+pack. The number
+of template parameters in a given $\bm{\overline{T}}$ is specified as
+$\bm{|\overline{T}|}$ and will be referred to as template parameter pack magnitude.
+Each $\bm{|\overline{T}|}$ abstraction can be optionally followed by a single curly brace
+enclosure ($\bm{\{\}}$) with up to two comma separated symbolic identifiers which reflect
+eagerly evaluated constant expressions. If and only if such additional notation
+to $\bm{|\overline{T}|}$ exists, it itself may be followed by a single square
+bracket enclosure ($\bm{[]}$) containing up to a single symbolic identifier  for an eagerly
+evaluated constant expression. This last operator, when used with an evaluated constant
+expression will refer to the times the entire pack is to be repeated.
+For a given pack declaration $\bm{|\overline{T}|}$
+the pack expansion operation is symbolized as $\overset{\bm.\bm.\bm.}{\bm{T}}$.
+The term pack declarator is reserved for $\bm{\overline{T}\{\}[]}$, pack
+generator for $\overset{\bm.\bm.\bm.}{\bm{T}}\bm{\{\}[]}$. The series
+of equivalences of such notation with the current way of declaring and
+expanding parameter packs are illustrated accordingly.
+
+\begin{align}
+\overline{T}\{\}[] &\equiv \overline{T}\{\} \equiv \overline{T} \equiv ...T\\
+\overset{...}{T}\{\}[] &\equiv \overset{...}{T}\{\} \equiv\overset{...}{T} \equiv T...\\
+|\overline{T}| &\equiv sizeof...(T)\\
+\overline{T}\{|\overline{T}|\}[1] &\equiv \overline{T}\{|\overline{T}|\}[] \equiv \overline{T}\{\}[] \equiv ...T\\
+\overset{...}{T}\{|\overline{T}|\}[1] &\equiv \overset{...}{T}\{|\overline{T}|\}[] \equiv \overset{...}{T}\{\}[] \equiv T...
+\end{align}
+
+\p One way to represent the n-tuple character of template parameter
+packs is to model them as nested ordered pairs. The following representation is
+congruent with the way template parameter packs are being manipulated using
+pattern matching techniques, from their left to their right bound (head to tail).
+The whole concept is of course reminiscent of a right fold of a cons function
+over our ordered n-sequence of types.
+
+\begin{align}
+\overline{T}\{|\overline{T}|\}
+    &= \underbrace{( t_{0}
+                   , ( t_{1}
+                     , (t_{2}
+                     , ( \dots{}
+                      , ( t_{n-1},\emptyset)\dots))))}_{n=|\overline{T}|}
+\end{align}
+
+\p The meaning of the curly braces and square brackets can be generalized based on
+our previous assumptions and illustrated using the same symbolic notation. Notice
+that in this case, we end up making full use of the new pack operators, without
+changing at all the semantics of the original pack declaration and expansion
+as they are in the current C++ standard. The meaning of the new pack operators
+is the generalization of the pack concept.
+\begin{align}
+\overline{T}\{n\}[1]
+    &= \underbrace{( t_{0}
+                   , ( t_{1}
+                     , (t_{2}
+                     , ( \dots{}
+                      , ( t_{n-1},\emptyset)\dots))))}_{|\overline{T}|=n\times{1}} \\
+\overline{T}\{n\}[m]
+    &= \underbrace{( t_{0}
+                   , ( t_{1}
+                     , (t_{2}
+                     , ( \dots{}
+                      , ( t_{n-1},\overline{T}\{n\}[m-1])\dots))))}_{|\overline{T}|=n\times{m}} \\
+\overline{T}\{i,j\}[1]
+    &= \underbrace{( t_{i}
+                   , ( t_{i+1}
+                     , (t_{i+2}
+                     , ( \dots{}
+                      , ( t_{j-1},\emptyset)\dots))))}_{|\overline{T}|=(j-i)\times{1}} \\
+\overline{T}\{i,j\}[n]
+    &= \underbrace{( t_{i}
+                   , ( t_{i+1}
+                     , (t_{i+2}
+                     , ( \dots{}
+                      , ( t_{j-1},\overline{T}\{i,j\}[n-1])\dots))))}_{|\overline{T}|=(j-i)\times{n}}
+\end{align}
+
+%%% -- This is an important paragraph
+\p
+
+\begin{align}
+\underset{\forall n,i,j \in \mathbb{Z}_{\geq0} \mid{} 0 \leq i \leq j}{|\overline{T}\{i,j\}[n]|} &= (j-i)\times{n}
+\end{align}
+
+
+\p There can be a generalized form of declaration pack magnitude based on these observations.
+Notice that we are not dealing with the magnitude
+of expansion, but that of declaration for the time being. The context-dependency of
+$\overline{T}\{i,j\}[n]$ and $\overset{...}{T}\{k,l\}[m]$ in template parameter/argument
+list declaration and within the definition body of an eventual template may allow
+us a more creative use of pack extension magnitudes. But for a pack declaration, with
+the proposed operators, there is a specific relationship of the pack magnitude and
+the eagerly evaluated constant expressions used with the operators.
+
+\begin{align}
+\underset{\forall n,i,j \in \mathbb{Z}_{\geq0} \mid{} 0 \leq i \leq j}{|\overline{T}\{i,j\}[n]|} &= (j-i)\times{n}
+\end{align}
+\p From this of course, the relation of the proposed pack magnitude with the new operators applied on template
+parameter pack with the valid C++11/C++14 semantics is trivial to understand:
+\begin{align}
+|\overline{T}\{0,|\overline{T}|\}[1]| &= |\overline{T}| \equiv sizeof...(T)
+\end{align}
+
+\subsubsection{Substitutive ordering as an extension of partial ordering}
+\p By extending the field where partial ordering applies, annotated packs allow for the introduction of substitutive ordering.
+Such ordering means that annotated packs gain matching precedence over undetermined packs as representing the set of all deterministic type-safe expansions of an undetermined pack with whose rank equals that of the annotation interval.
+There are some constraints that must be enforced in order for pack annotation to be compatible with existing C++11/C++14 practices.
+
+\begin{enumerate}
+\item Annotation semantics are dependent of whether they are used in pack declaration or expansion.
+Annotated declaration constrains annotated expansion to be of magnitude kind.
+When magnitude expansion is not specified in a annotatively declared pack, undetermined notation is used or the regular unpacking is required to be specified in the template argument list involved.
+\item Expansive annotation can only be used in the context of the declaration of a template parameter list that is not the same as the template parameter list where the annotated pack was declared. This is in accordance with how parameter pack declaration and expansion behave.
+\item Expansive annotation cannot be used within a definition body, with undetermined notation or regular unpacking being specified for the use of the entire ordered sequence of types the annotated pack is abstracting.
+\item Packs that were declared annotatively and subsequently used in template definitions (i.e. outside the context of a template parameter list) can use the interval annotator with a single constant expression, the latter serving as access to individual elements contained, with value within $[0,|\overline{T}\{i,j\}[n]|)\subset{\mathbb{Z}_{\geq 0}}$.
+\item Class templates can use interval, anchor and repeater annotation for parameter packs in their template parameter or argument list declarations, because they are allowed to partially specialize in C++.
+\item Class templates deploying interval annotation for their parameter packs are supposed to be partially ordered with partial specializations for every anchored expansion valid within the declared interval annotation range.
+If said partial specializations do not exist, matching is delegated to an appropriate, more generic match for the same declarared template identifier.
+\item Function templates can use anchor and repeater but not interval annotation for parameter packs in their template parameter or argument list declarations, because they are not allowed to partially specialize in C++.
+\item Expansive annotation used in a template parameter list cannot override the constraints set to a pack during annotated declaration in either class or function templates.
+When annotated pack declaration uses full interval annotation, expansive annotation is allowed with the interval annotator being allowed to contain a single eagerly evaluated constant expression representing a fixed size of parameters the pack is to expand to, with the former being within the interval specified in annotated pack declaration.
+\begin{minted}{c++}
+template<typename...T>
+struct class_template { /* implementation here */ };
+
+template<typename...T{2,10}[3]>  /* partial specialization of class_template */
+struct class_template<T...{4}> { /* 4 is in [2,10), match if repeated 3 */ };
+
+template<typename...T{2,10}[2]>  /* partial specialization of class_template */
+struct class_template<T...{4}> { /* 4 is in [2,10), match if repeated 2 */ };
+
+template<typename...T{2,10}>  /* partial specialization of class_template */
+struct class_template<T...{4}> { /* match if just 4, already in [2,10) */ };
+\end{minted}
+\item \p The same expansion semantics hold for function templates when full interval notation has been used in their annotated pack declaration.
+This is not equivalent to partially specializing function templates, which would be illegal, because in this case the annotated expansion serves as confirming deterministically which expansion is the interval
+annotation is specified for.
+\begin{minted}{c++}
+template<typename...T>
+void function(T...) { /* match if nothing else matches */ }
+
+template<typename... T{2,5}[2]>
+void function_template(T...{3}) { /* 3 in [2,5) => match if repeats 2 */ }
+
+template<typename... T{2,5}>
+void function_template(T...{4}) { /* 4 is in [2,5) => match */ }
+
+template<typename... T{4}>
+void function_template(T...) { /* sizeof...(T) is locked to 4, match when 4 */}
+
+template<typename... T{4}[2]>
+void function_template(T...) { /* locked to 4, match when repeated 2 */}
+\end{minted}
+\p The following are examples where function templates with annotated parameter packs are illegal to use in the context of the proposal.
+This happens when the interval annotator is used without befitting anchor notation used in expansion.
+\begin{minted}{c++}
+template<typename... T{2,5}>
+void function_template(T...{9}) { /* 9 NOT in [2,5) => error */}
+
+template<typename... T{2,10}>
+void function_template(T...) { /* illegal, error */}
+\end{minted}
+\end{enumerate}
+\subsubsection{Accessing individual elements in annotated and non-annotated packs}
+\p Following pack declaration and after matching has occured, there is the problem of specifying individual access to elements being contained in said expansion.
+The semantic context of the interval annotator is overloaded to be that of an individual element accessor in the definition body of a class or function template.
+Individual access is specified by the annotated pack identifier without ellipsis surrounding it, followed by anchor annotation whose constant expression is the index of the type we wish to refer to.
+
+\p Within the definition body of a function template, class template and any combination of functions, classes, whether in template form or not that are currently allowed in C++ to use as members whenever applicable annotated expansion can be used in anchor or accessor form.
+
+\p Some examples follow explaining these two notions
+\begin{enumerate}
+\item \p Given a variadic class template with an annotated template pack $\overline{T}\{3,6\}$, write the partial class specialization gaining matching priority for a magnitude $|\overline{T}| = 5$ containing a static function accepting the extended parameter pack in its argument list and returning std::tuple with the pack expanded in reverse order.
+\begin{minted}{c++}
+template<typename... T{3,6}>            /* interval of [3,6) */
+struct class_template<T...{5}> {        /* match when sizeof...(T) == 5 */
+    /* std::tuple for T...{5}, reversed */     /* T... can be used! */
+    static std::tuple<T{4},T{3},T{2},T{1},T{0}> function(T...{5}) {
+        T{0} t0; /* example of a declaration within definition */
+                 /* implementation here */
+    }
+};
+\end{minted}
+\item \p Another example using a $\overline{T}\{4,6\}$ pack where by convention we intend to pass template parameter types unique to each other is the following. Notice that if what is abstracted in $\overline{T}\{4,6\}$ is not really unique, member functions with the same signature will produce ambiguous overloads, as expected by the current C++ standard.
+\begin{minted}{c++}
+template<typename... T{4,6}>
+struct class_template<T...{4}> {
+    static void member_function(T{0}) {}
+    static void member_function(T{1}) {}
+    static void member_function(T{2}) {}
+    static void member_function(T{3}) {}
+};
+\end{minted}
+\item\p Anchored pack expansion is NOT legal to use for any specified anchor expression if an anchor has already been set in a dependent template parameter list, because that would make the parameters involved non-deducible.
+\begin{minted}{c++}
+template<typename... T{4,6}, typename... X>
+struct class_template<T...{5}, X...> /* anchored to 5  for ...T{4,6} */
+     : class_template<T...{4}>       /* error, pack has already been anchored */
+{};
+\end{minted}
+\item\p Individual accessors are not anchors and they are not ambiguously annotated with any accompanying ellipsis, so class template partial specialization who have already used anchored annotation in expansion can mix freely with individual accessors provided an interval anchor has already been set in an annotated expansion.
+\begin{minted}{c++}
+template<typename... T{4,6}, typename... X>
+struct class_template<T...{4}, X...>        /* anchored to 4  for ...T{4,6} */
+     : class_template<T{1},T{2},T{3},X...>  /* ok, accessor expressions */
+{ /* doing something interesting with T{0} here... */ };
+\end{minted}
+\item\p An individual accessor and an anchored expansion for the same annotated pack can coexist in the same parameter list, but not with the interval annotation they are derived from.
+This is congruent to the character of standard compliant pack declaration and expansion.
+\begin{minted}{c++}
+ /* This is legal, T...{5} is "fixed", accessors and anchor not in the same
+  * template parameter list as the annotated interval pack declaration */
+template<typename...T{2,6}>
+struct class_template<T...{5}> {
+    static void function(T{4},T...{5},T{4}) {}
+ /* static void function(T{4},T...,T{4}) {} is equivalent; anchor = 5 already */  
+};
+\end{minted}
+\item\p Accessors can be used with parameter packs in order to access individual elements in a non-annotated template parameter pack as the ones currently present in C++.
+The following example implements individual access and change for types contained within parameter packs in a class template used as type vector.
+Notice the use of the class template partial specialization syntax and how this is combined with constant expressions to yield the desired result.
+\begin{minted}{c++}
+
+struct error_type {};
+/* the typevector is actually just a holder for a pack */
+template<typename... X> struct typevector {};
+
+/* some initial definitions for cases where a typevector is not used */
+template<std::size_t N, typename> struct at_pos { typedef error_type type; };
+template<std::size_t N, typename> struct change_at { typedef error_type type; };
+template<std::size_t N, typename> struct split_at { typedef error_type type; };
+
+/* implementation of at_pos */
+template< std::size_t N
+        , typename... T{0,(N < sizeof...(T) ? sizeof...(T) : 0)}>
+struct at_pos<N,typevector<T...{}>> /* T...{} is the 'catch-all' for T */
+{ typedef T{N} type; };
+
+/* implementation of change_at */
+template< std::size_t N
+        , typename X
+        , typename Z
+        , typename... T{0,(N < sizeof...(T) ? sizeof...(T) : 0)} /* T{0,0} ! */
+        , typename... R >
+struct change_at<N,X,typevector<T...{N-1},Z,R...>>
+{ typedef typevector<T...{N-1},X,R...> type; };
+
+/* implementation of split_at */
+template< std::size_t N
+        , typename... L{0,(N < sizeof...(L) ? sizeof...(L) : 0)}
+        , typename... R{N,(N < sizeof...(R) ? sizeof...(R) : 0)} >
+struct split_at<N,typevector<L...{N-1},R...{sizeof...(R)}>> { /* anchored ! */
+    typedef typevector<L...> left;                      /* already anchored */
+    typedef typevector<R...> right;                     /* already anchored */
+};
+
+template<std::size_t N, typename... T> /* triggered when T{0,0}! */
+struct at_pos<N,typevector<T...>> { typedef error_type type; };
+
+template<std::size_t N, typename... T> /* triggered when T{0,0}! */
+struct change_at<N,typevector<T...>> { typedef error_type type; };
+
+template<std::size_t N, typename... T> /* triggered when T{0,0}! */
+struct split_at<N,typevector<T...>> { typedef error_type type; };
+
+\end{minted}
+\item\p Given that in the context of the proposal $\bm{\overline{T}\{0,|\overline{T}|\}[1] \equiv \overline{T}\{0,|\overline{T}|\}}$ while $\bm{\overline{T}\{0,|\overline{T}|\}[0] \equiv \emptyset{}}$ with the latter invoking SFINAE since it would resolve to an empty set (making the template parameter list invalid) and $\overline{T}\{0,|\overline{T}|\}\equiv{\overline{T}\{|\overline{T}|\}}\equiv{\overline{T}\{\}}$, we can exploit this behaviour of the repeat annotator for an interesting rewrite for one of the class template partial specializations presented before:
+\begin{minted}{c++}
+template<std::size_t N, typename... T{}[N < sizeof...(T)]>
+struct at_pos<N,typevector<T...>>
+{ typedef T{N} type; };
+\end{minted}
+\end{enumerate}
+
+\subsubsection{On an eventual overload of the repeater pack annotator}
+
+\p While for the time being we have focused on this using modified symbolic notation, there is something else to be said about the ($[]$) operator.
+Given that currently a C++ template parameter pack has template parameter types of the same "kind" (non-type, type, template-type) it is consequential to assume that a class template with a template parameter in its template parameter list providing a valid match for that "kind", can be used as a template meta-function for the entirety of the pack.
+One exciting possibility would be to allow the contextual overload of ($[]$) to not just be a repeater, but to accept a class templates instead of constant expressions, allowing for fundamental but high order operations like folds to occur. At the current status of this draft, the semantics of such a possibility are underway.
+
+\subsection{Simple pack annotation examples}
+\subsubsection{Annotated template parameter pack declaration}
+\p The following examples refer to syntax that should be used on templateparameter lists for the optional pack notation.
+The notation forces the pack to expand to a specific pattern depending on what the template is to be instantiated with, but in all cases where $\{\}$ is used with a constant expression, the parameter list in declaration is equivalent to the list the same template would have had if it was not variadic.
+We will refer to this as the "substitution principle".
+The effect of the annotation is to substitute for a set of templates that would otherwise have to be written because template parameter packs would not suffice alone for the patterns we want to express.
+
+\begin{minted}{c++}
+/*01*/ template<typename...T{}[]>     /* template<typename... T> */
+/*02*/ template<typename...T{}[1]>    /* template<typename... T> */
+/*03*/ template<typename...T{}>       /* template<typename... T> */
+/*04*/ template<typename...T{5}>      /* fixed amount of 5 types */
+/*05*/ template<typename...T{5}[2]>   /* fixed of 5, match if 1 repeat */
+/*06*/ template<typename...T{3,9}[2]> /* [3, 9), match if 1 repeat */
+/*07*/ template<typename...T{3,9}>    /* provide a match for [3,9) types */
+/*08*/ template<template<typename...T{}[]>     class>
+/*09*/ template<template<typename...T{}[1]>    class>
+/*10*/ template<template<typename...T{}>       class>
+/*11*/ template<template<typename...T{5}>      class>
+/*12*/ template<template<typename...T{5}[2]>   class>
+/*13*/ template<template<typename...T{3,9}[2]> class>
+/*14*/ template<template<typename...T{3,9}>    class>
+/*15*/ template<template<typename...T{}[]>     class...P{}[]>
+/*16*/ template<template<typename...T{}[1]>    class...P{3}[2]>
+/*17*/ template<template<typename...T{4}>      class...P{4}>
+/*18*/ template<template<typename...T{5}>      class...P>
+/*19*/ template<template<typename...T{5}[2]>   class...P{1,3}[4]>
+/*20*/ template<template<typename...T{3,9}[2]> class...P{}[2]>
+/*21*/ template<template<typename...T{3,9}>    class...P{2}>
+\end{minted}
+
+\p The pack annotation examples show how the "substitution principle" places both annotated and non-annotated parameter packs into a continuum: the annotated packs are more constrained, while providing a series of templates that match the different template declaration parameter lists.
+If and only if an annotated pack has annotation involving the $\{\}$ annotator will it be allowed to appear without as a non-terminal identifier:
+
+\begin{minted}{c++}
+/* missing */
+\end{minted}
+
+\p In that sense, one could paragonize the fully annotated version with a vertical repetition construct in the example of $\overline{T}\{3,9\}[2]$ where different template declaration parameter lists refer to the same template definition body.
+The problem of how to deal with these different templates when a different definition body is required, is addressed in the subsection about annotated template parameter pack expansion.
+
+\section{Technical specification}
+\subsection{Grammar Additions}
+\p The current section you are reading is under revision prior to initial public release.
+Not yet ready for draft stage.
+Each section presented should not be affecting sections that are already presented in the current draft. Unreleased sections that are under revision could be having incomplete elaboration of the concepts involved and that is the primary reason for their revision.
+\section{Acknowledgements}
+The author would like to thank Ville Voutilainen, current C++ Standard Commitee EWG Chairman for strongly motivating the drafting of this document.
+The "fixed pack size" initiative was originally presented on the C++ std-proposals mailing list by Maurice Bos\textsuperscript{citation pending}.
+
+\addcontentsline{toc}{section}{References}
+\printbibliography
+\end{document}
