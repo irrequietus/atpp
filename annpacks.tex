@@ -647,7 +647,7 @@ template<std::size_t N, typename> struct split_at { typedef error_type type; };
 /* implementation of at_pos */
 template< std::size_t N
         , typename... T{0,(N < sizeof...(T) ? sizeof...(T) : 0)}>
-struct at_pos<N,typevector<T...{}>> /* T...{} is the 'catch-all' for T */
+struct at_pos<N,typevector<T...>> /* T...{} is the 'catch-all' for T */
 { typedef T{N} type; };
 
 /* implementation of change_at */
