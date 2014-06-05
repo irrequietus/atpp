@@ -181,9 +181,13 @@
 
 \begin{abstract}
 \p Parametric polymorphism in C++\cite{cpp11} is implemented through class and function templates whose parameter types refer to three different abstractions used for template declarations: template non-type, template type and template-template type parameters.
-Template arguments correspond to these three kinds of parameters and replace every one of the three kinds of template parameters during instantiation phase.
-A fourth kind of template parameter abstraction has been in the C++11 standard is referred to as template parameter packs, allowing variadic templates to be introduced and augmenting the expressivity of template meta-programming techniques.
-The current document aims to study a series of possible extensions to template parameter pack notation in order to allow for the generation of complex sequences of type patterns in both pack declaration and expansion.
+Since C++11, a fourth kind of template parameter abstraction known as the template parameter pack has been introduced, expressing an ordered sequence of a variable number of parameter types, the exact specifics of which to be decided during instantiation.
+
+\p In their current incarnation, template parameter packs do not have any notation explicitely descriptive of their size and/or actual expansion intent.
+Resourceful combinations of parameter packs with partial specializations, SFINAE, ADL and partial ordering are extensively deployed in several template programming and meta-programming techniques for code generation purposes.
+
+\p This proposal argues that \textit{optionally annotating C++ template parameter packs} in a backwards compatible manner with information about size, repetition and patterned expansion during their use in template parameter lists can be detrimental in reducing the cost of using templates as computational constructs within a given translation unit.
+As a result, code generation techniques based on simple template programming and meta-programming would require less source code boilerplate containing templates or relying to type-unsafe C++ preprocessor meta-programming to be required.
 \end{abstract}
 
 \section{Introduction}
