@@ -103,7 +103,7 @@
 %%% activating everypage hooks for header geometry issues
 \AddEverypageHook{%
     \ifthenelse{\value{page}=1}%
-    {\renewcommand{\headheight}{94pt}}
+    {\renewcommand{\headheight}{72pt}}
     {\renewcommand{\headrulewidth}{0.0pt}}%
     {\renewcommand{\headrulewidth}{0.4pt}}%
 }
@@ -140,10 +140,8 @@
 {\color{magenta}docnum} &  {\color{tone0} DEEMED IMMATURE} \\
 {\color{magenta}project} & Programming Language C++, EWG \\
 {\color{magenta}date} & \date{\today{} \currenttime{} EEST} \\
-{\color{magenta}revision} & \texttt{\GitShortRev{}} \\
 {\color{magenta}author} & George Makrydakis \\
 {\color{magenta}reply-to} & \texttt{\href{mailto:irrequietus@gmail.com}{irrequietus@gmail.com}} \\
-{\color{magenta}for the kind attention of} & {\color{red}Ville Voutilainen}\\
 \end{tabular}}}{\slshape Annotating C++ template parameter packs\\
 \bf{{\color{magenta} \GitLongRev{} - \date{\today{} \currenttime{} EEST}}}}}
     
@@ -191,39 +189,20 @@ As a result, code generation techniques based on simple template programming and
 \end{abstract}
 
 \section{Introduction}
-\p Template parameter packs can be viewed as product types from a
-theoretical point of view, with cohere semantics in both their declaration
-and expansion within a given template parameter/ argument list. Their important
-sequence processing features used with other characteristics of the C++ language
-like partial class template specializations, tag dispatching, class and function
-template partial ordering, SFINAE, ADL, result into advanced code generation
-using C++ template meta-programming. This document explores the possibility
-of implementing advanced pattern generation techniques through template
-parameter packs, without introducing backwards incompatibilities and/or conflicts with
-established C++ practices, through optional notation
-accompanying template parameter pack declaration/expansion. In essence, optionally turn parameter packs 
-into constrained pattern generators instead of plain unconstrained pattern containers.
+\p Template parameter packs can be viewed as product types from a type-theoretical point of view, with cohere but undecided boundary semantics in both their declaration and expansion within a given template parameter list, until the template containing them is a valid instantiative match.
 
-\section{Motivation, scope, impact on the standard}
+\p Pattern matching driven approaches through class template partial specializations and function template template parameter lists in combination with features like SFINAE, have proven their worth in the meta-programming armamentary of widely used and critically acclaimed C++ libraries like Boost.
+Such libraries make extensive use of compile-time computational constructs for code generation, with their C++03 emulation of parameter variadics through preprocessor meta-programming techniques eventually having lead to the introduction of variadic templates through parameter packs in C++11.
 
-\p With the proposed approach of optional pack notation, we can reduce the code
-boilerplate required for multiple class
-template partial specializations and multiple function templates in order to
-offer the most specialized implementation of algorithms for a particular sequence
-of type patterns.Extending template parameter
-pack notation without introducing backwards incompatibilities,
-that if generic enough, may obviate the need for complex and constrained
-uses of preprocessor meta-programming in a series of scenarios where
-C++ template and constexpr meta-programming are inadequate due to the
-nature of the patterns required to ge generated. Source code generation
-partially assisted through preprocessor meta-programming using both
-vertical and horizontal expansion/repetition patterns can be found in the
-critically acclaimed and peer-reviewed boost C++ libraries.
-\p In order to understand why such notation can be useful, we need to observe
-certain behaviours of parameter packs with pattern matching as intended in
-even simple cases of C++ template meta-programming.
+\p Packs led to concise, readable and error-free implementation of template meta-programming idioms through lowering the cost for pattern matching over lists of parameter types.
+Template meta-programming idioms became extremely less dependent on SFINAE and horizontal pattern repetition through type-unsafe preprocessor meta-programming techniques requiring a lot more source code boilerplate.
+However, packs have been unable to reduce the required boilerplate for useful type-level pattern matching over a wide sequence of common, repetitive patterns and/or of specified but numerous sequences of parameter types that are often used as pattern matching "values".
 
-\subsection{Parameter packs and Pattern Matching}
+\p The "parameter packs and pattern matching" section uses class and function template approaches for illustrating the inadequacy of parameter packs in reducing code boilerplate when pattern matching is used computationally.
+A generalization of parameter packs as sets of bounded type blocks resolving to either finite or variadic packs as limit solutions is conceptualized in "Parameter packs as sets of patterns and sequences", concluding the contextual frame of the proposal by introducing the concept of "annotated template parameter packs" one section after.
+Examples of use in code valid within the context of the proposal follow just before the impact on the standard and grammar additions are discussed.
+
+\section{Parameter packs and Pattern Matching}
 \p The following source code example is C++11/C++14 compliant and illustrates
 some simple ways through which manipulation of template parameter pack declaration
 and expansion are practiced. It becomes quite apparent that because of the
@@ -237,8 +216,6 @@ the C++ features used as computational devices during instantiation phase.
 
 \begin{minted}{c++}
 
-#include <cstdio>
-
 template<typename... Types_T>
 struct packed;
 
@@ -250,36 +227,42 @@ struct packed<Head,Tail...> {
 template<>
 struct packed<>
 { typedef packed<> pop_front; };
-
+\end{minted}
+\begin{minted}{c++}
 template<typename... T>
 void function(packed<T...>) {
     printf("%d types contained\n", sizeof...(T));
     function(typename packed<T...>::pop_front());
 }
-
+\end{minted}
+\begin{minted}{c++}
 template<typename... X, typename... Y>
 void function(packed<X...,long,Y...>) {
     printf( "%d types contained and a long found!\n"
           , sizeof...(X) + sizeof...(Y) + 1);
     function(typename packed<X...,long,Y...>::pop_front());
 }
-
+\end{minted}
+\begin{minted}{c++}
 template<typename T,typename...X>
 void function(packed<T,T,X...>) {
     printf("%d IDENTICAL types found out of %d \n", 2, sizeof...(X)+3);
     function(typename packed<T,T,X...>::pop_front());
 }
-
+\end{minted}
+\begin{minted}{c++}
 template<typename X, typename Y, typename...T>
 void function(packed<X,Y,T...>) {
     printf("just %d DIFFERENT types contained\n", 2 + sizeof...(T));
     function(typename packed<X,Y,T...>::pop_front());
 }
-
+\end{minted}
+\begin{minted}{c++}
 void function(packed<>) {
     printf("no types contained anymore!\n");
 }
-
+\end{minted}
+\begin{minted}{c++}
 int main() {
    function(packed<char,short,short,long,short,int,int>());
    return {};
@@ -662,14 +645,18 @@ A candidate match is then successful if by partial ordering any other template c
 
 \p The following code snippets give the reader an overview of how annotated pack declaration works through parameter list examples.
 \begin{enumerate}
-\item\p This first trio of template parameter lists are equivalent and would cause an ambiguous match if any combination of the two was found within a source file, but they would match over the non-annotated parameter packs despite them being variadic because of substitutive ordering.
+\item\p Any 2-combination of the following template parameter lists would cause ambiguity to emerge due to substitutive ordering treating them equivalently.
 \begin{minted}{c++}
-/*01*/ template<typename...T{}[]>     /* matches over template<typename... T> */
-/*02*/ template<typename...T{}[1]>    /* matches over template<typename... T> */
-/*03*/ template<typename...T{}>       /* matches over template<typename... T> */
+/*00*/ template<typename...T>
+/*01*/ template<typename...T{}[]>                 /* typename... T */
+/*02*/ template<typename...T{}[1]>                /* typename... T */
+/*03*/ template<typename...T{sizeof...(T)}>       /* typename... T */
+/*04*/ template<typename...T{sizeof...(T)}[1]>    /* typename... T */
+/*05*/ template<typename...T{0,sizeof...(T)}>     /* typename... T */
+/*06*/ template<typename...T{0,sizeof...(T)}[1]>  /* typename... T */
 \end{minted}
 
-\item\p For the same reasons, this is valid for every annotated pack. Substitutive ordering enforces the same preferential priority when packs of non-type, type, template-template type parameters are being declared annotatively over their variadic counterparts.
+\item\p Substitutive ordering enforces the same preferential priority when packs of non-type, type, template-template type parameters are being declared annotatively over their variadic counterparts.
 \begin{minted}{c++}
 /*04*/ template<typename...T{5}>      /* fixed amount of 5 types */
 /*05*/ template<typename...T{5}[2]>   /* fixed of 5, match if 1 repeat */
