@@ -59,6 +59,7 @@
 \usepackage{textcomp}
 \usepackage{mparhack}
 \usepackage{draftwatermark}
+\usepackage{relsize}
 \usepackage[nottoc,numbib]{tocbibind}
 \usepackage[nodate]{datetime}
 \usepackage{everypage} %%% solving page layout problems in different pages
@@ -396,19 +397,11 @@ allowing again the selective nature of partial ordering to occur.
 \section{Design Decisions, from theory to practice}
 \subsection{Symbolic notation for theoretical considerations}
 
-\p For the purposes of this
-document, template parameter packs in use within a given translation unit
-will constitute a theoretical set (\typepack{\pi}) of template non-type
-(\typepack{0}), template type (\typepack{1}) and template template type
-parameters (\typepack{2}).  Capital letters with an overline
-(e.g. $\bm{\overline{T}}$) refer to the declaration of a specific template parameter
-pack. The number
-of template parameters in a given $\bm{\overline{T}}$ is specified as
-$\bm{|\overline{T}|}$ and will be referred to as template parameter pack magnitude.
-Each $\bm{|\overline{T}|}$ abstraction can be optionally followed by a single curly brace
-enclosure ($\bm{\{\}}$) with up to two comma separated symbolic identifiers which reflect
-eagerly evaluated constant expressions. If and only if such additional notation
-to $\bm{|\overline{T}|}$ exists, it itself may be followed by a single square
+\p For the purposes of this document, template parameter packs in use within a given translation unit constitute a theoretical set (\typepack{\pi}) of template non-type (\typepack{0}), template type (\typepack{1}) and template template type parameters (\typepack{2}).
+Capital letters with an overline(e.g. $\bm{\overline{T}}$) refer to the declaration of a specific template parameter pack.
+The number of template parameters in a given $\bm{\overline{T}}$ is specified as $\bm{|\overline{T}|}$ and will be referred to as template parameter pack magnitude.
+Each $\bm{|\overline{T}|}$ abstraction can be optionally followed by a single curly brace enclosure ($\bm{\{\}}$) with up to two comma separated constant expressions.
+If and only if such additional notation to $\bm{|\overline{T}|}$ exists, it itself may be followed by a single square
 bracket enclosure ($\bm{[]}$) containing up to a single symbolic identifier  for an eagerly
 evaluated constant expression. This last operator, when used with an evaluated constant
 expression will refer to the times the entire pack is to be repeated.
@@ -427,74 +420,61 @@ expanding parameter packs are illustrated accordingly.
 \overset{...}{T}\{|\overline{T}|\}[1] &\equiv \overset{...}{T}\{|\overline{T}|\}[] \equiv \overset{...}{T}\{\}[] \equiv T...
 \end{align}
 
-\p One way to represent the n-tuple character of template parameter
-packs is to model them as nested ordered pairs. The following representation is
-congruent with the way template parameter packs are being manipulated using
-pattern matching techniques, from their left to their right bound (head to tail).
-The whole concept is of course reminiscent of a right fold of a cons function
-over our ordered n-sequence of types.
-
+\subsubsection{Conceptualizing parameter packs}
+\p A few simple rules govern parameter packs when it comes to defining their properties.
+First, a parameter pack is an n-ordered sequence of zero or more parameter types of the same kind (non-type, type-type, template-type).
+They can be viewed as product types and modelled using nested ordered pairs, in a way reminiscent of a left/right fold of a cons function over the n-tuple that they actually are.
+The following formulations inductively define a template parameter pack as $\overline{T}$ or $\overline{T'}$, with $|\overline{T}|$, $|\overline{T'}|$ being equivalent to applying the sizeof... operator on a given parameter pack.
 \begin{align}
-\overline{T}\{|\overline{T}|\}
+\overline{T}
     &= \underbrace{( t_{0}
                    , ( t_{1}
                      , (t_{2}
                      , ( \dots{}
-                      , ( t_{n-1},\emptyset)\dots))))}_{n=|\overline{T}|}
+                      , ( t_{n-1},\emptyset)\dots))))}_{n=|\overline{T}|=sizeof...(T)}\\
+\overline{T'}
+    &= \underbrace{((\dots{} (((\emptyset{},t_{0})
+                   ,  t_{1})
+                     , t_{2})
+                     ,  \dots{}
+                      ), t_{n-1})}_{n=|\overline{T'}|=sizeof...(T')}
 \end{align}
-
-\p The meaning of the curly braces and square brackets can be generalized based on
-our previous assumptions and illustrated using the same symbolic notation. Notice
-that in this case, we end up making full use of the new pack operators, without
-changing at all the semantics of the original pack declaration and expansion
-as they are in the current C++ standard. The meaning of the new pack operators
-is the generalization of the pack concept.
+\p We will be using the $\overline{T}$ formulation from now on, with an \textit{annotator} next to parameter pack declaration containing the size of the pack enclosed in curly braces as $\bm{\{j\}}$.
+Should we wish to create any new pack comprised of 0 to n repetitions of our $\overline{T}\{i\}$ pack, we would inductively define a repetitive pattern for the said packs specified by another \textit{annotator} containing the times this repetition is to occur enclosed within square brackets $\bm{[n]}$, resulting in an annotated pack $\overline{T}\{i\}[n]$.
 \begin{align}
-\overline{T}\{n\}[1]
+(\overline{T}\{i\},\emptyset)
     &= \underbrace{( t_{0}
                    , ( t_{1}
                      , (t_{2}
                      , ( \dots{}
-                      , ( t_{n-1},\emptyset)\dots))))}_{|\overline{T}|=n\times{1}} \\
-\overline{T}\{n\}[m]
+                      , ( t_{i-1},\emptyset)\dots))))}_{1\times{}|\overline{T}|}\\
+(\overline{T}\{i\},(\overline{T}\{i\},\emptyset))
     &= \underbrace{( t_{0}
                    , ( t_{1}
                      , (t_{2}
                      , ( \dots{}
-                      , ( t_{n-1},\overline{T}\{n\}[m-1])\dots))))}_{|\overline{T}|=n\times{m}} \\
-\overline{T}\{i,j\}[1]
-    &= \underbrace{( t_{i}
-                   , ( t_{i+1}
-                     , (t_{i+2}
+                      , ( t_{i-1},\overline{T}\{i\})\dots))))}_{2\times{}|\overline{T}|}\\
+(\overline{T}\{i\},(\overline{T}\{i\},(\overline{T}\{i\},\emptyset)))
+    &= \underbrace{( t_{0}
+                   , ( t_{1}
+                     , (t_{2}
                      , ( \dots{}
-                      , ( t_{j-1},\emptyset)\dots))))}_{|\overline{T}|=(j-i)\times{1}} \\
-\overline{T}\{i,j\}[n]
-    &= \underbrace{( t_{i}
-                   , ( t_{i+1}
-                     , (t_{i+2}
+                      , ( t_{i-1},(\overline{T}\{i\},(\overline{T}\{i\},\emptyset)))\dots)))))}_{3\times{}|\overline{T}|}\\
+\mathsmaller{\mathsmaller{\overbrace{(\overline{T}\{i\},(\overline{T}\{i\},(\overline{T}\{i\},(\dots{},(\overline{T}\{i\},\emptyset)\dots))))}^{n}}}
+    &= \mathsmaller{\mathsmaller{\underbrace{( t_{0}
+                   , ( t_{1}
+                     , (t_{2}
                      , ( \dots{}
-                      , ( t_{j-1},\overline{T}\{i,j\}[n-1])\dots))))}_{|\overline{T}|=(j-i)\times{n}}
-\end{align}
-
-%%% -- This is an important paragraph
-\p
-
-\begin{align}
-\underset{\forall n,i,j \in \mathbb{Z}_{\geq0} \mid{} 0 \leq i \leq j}{|\overline{T}\{i,j\}[n]|} &= (j-i)\times{n}
-\end{align}
-
-
-\p There can be a generalized form of declaration pack magnitude based on these observations.
-Notice that we are not dealing with the magnitude
-of expansion, but that of declaration for the time being. The context-dependency of
-$\overline{T}\{i,j\}[n]$ and $\overset{...}{T}\{k,l\}[m]$ in template parameter/argument
-list declaration and within the definition body of an eventual template may allow
-us a more creative use of pack extension magnitudes. But for a pack declaration, with
-the proposed operators, there is a specific relationship of the pack magnitude and
-the eagerly evaluated constant expressions used with the operators.
-
-\begin{align}
-\underset{\forall n,i,j \in \mathbb{Z}_{\geq0} \mid{} 0 \leq i \leq j}{|\overline{T}\{i,j\}[n]|} &= (j-i)\times{n}
+                      , ( t_{i-1},\overbrace{(\overline{T}\{i\},(\overline{T}\{i\},(\dots{},(\overline{T}\{i\},\emptyset)\dots))))}^{n-1})\dots))))}_{n\times{}|\overline{T}|}}}\\
+\overline{T\{i\}}
+    &= ( t_{0}
+                   , ( t_{1}
+                     , (t_{2}
+                     , ( \dots{}
+                      , ( t_{i-1},\emptyset)\dots))))\\
+\overline{T\{i\}[n]}
+    &= (\overline{T\{i\}},\overline{T\{i\}[n-1]}) \\
+    \underset{\forall n,i,j \in \mathbb{Z}_{\geq 0}\wedge{[i,j)\neq \emptyset{}}} {\overline{T\{i,j\}[n]}} &= \{\overline{T'}\mid \overline{T'\{k\}[n]} \wedge{} k \in [i,j)\}
 \end{align}
 
 \section{Accessors and typelists}
