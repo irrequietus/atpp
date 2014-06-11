@@ -192,14 +192,21 @@ As a result, code generation techniques based on simple template programming and
 \section{Introduction}
 \p Template parameter packs can be viewed as product types from a type-theoretical point of view, with cohere but undecided boundary semantics in both their declaration and expansion within a given template parameter list, until the template containing them is a valid instantiative match.
 
-\p Pattern matching driven approaches through class template partial specializations and function template template parameter lists in combination with features like SFINAE, have proven their worth in the meta-programming armamentary of widely used and critically acclaimed C++ libraries like Boost.
-Such libraries make extensive use of compile-time computational constructs for code generation, with their C++03 emulation of parameter variadics through preprocessor meta-programming techniques eventually having lead to the introduction of variadic templates through parameter packs in C++11.
+\p Partial ordering and partial specializations allow for a type-driven kind of pattern matching to occur, becoming one of the two fundamentals  for any serious kind of C++ template meta-programming.
+Recursive template instantiations and using declarations after recursive derivations of such instantiations offer the other fundamental construct for parameter list and resolution set manipulation within class template definition.
 
-\p Packs led to concise, readable and error-free implementation of template meta-programming idioms through lowering the cost for pattern matching over lists of parameter types.
-Template meta-programming idioms became extremely less dependent on SFINAE and horizontal pattern repetition through type-unsafe preprocessor meta-programming techniques requiring a lot more source code boilerplate.
-However, packs have been unable to reduce the required boilerplate for useful type-level pattern matching over a wide sequence of common, repetitive patterns and/or of specified but numerous sequences of parameter types that are often used as pattern matching "values".
-\section{Motivation and Scope}
-\p \textit{{\color{tone1}There should be a few paragraphs here taking text from the old version.}}
+\p While parameter packs greatly enhance such C++ template meta-programming tools, they are just an omnicomprehensive abstraction into zero or more parameters without specifying certain constraints that included parameters must satisfy.
+This leads to increased source code boilerplate in the ever-often occasion where type-driven pattern matching has to be used for formulating template meta-programming constructs since this kind of pattern matching is dependent on specific sequences of types being present, with or without patterned repetition.
+\textit{Template parameter pack annotation} is a potential solution to this problem.
+
+\section{Motivation}
+\p The explicit goal of \textit{template parameter pack annotation} is to offer a optional extension to the current parameter pack declaration and expansion, through which constraints on the sequences and patterns contained within a given parameter pack may be specified for the explicit purpose of reducing source code boilerplate whenever the nowadays often used type-mediated pattern matching in C++ template meta-programming occurs.
+In its simplest case, such annotation results in producing parameter packs of finite ("fixed") size.
+In its more general case, allows for easy manipulation of sets of parameter packs within the domain of class template partial specializations.
+In either case, it can contemporaneously offer control over the actual contents of a parameter pack within the template parameter list declaration \textit{without requiring breaking changes to be introduced with past and ongoing C++ standards}.
+
+\p \textit{Template pack annotators}, are constant expressions enclosed within $\mathlarger{\bm{\{\}}}$ and $\mathlarger{\bm{[]}}$ immediately following parameter pack declaration, where the parameter pack identifier itself can participate in valid C++11/C++14 context.
+\textit{Template parameter pack annotation} depends on proper use of the \textit{annotators}, the semantics of which are analyzed and expanded upon in the following subsections.
 
 \subsection{Using patterns as input for pattern matching}
 \p \textit{{\color{tone1}There should be a few paragraphs here taking text from the old version.}}
@@ -208,6 +215,7 @@ However, packs have been unable to reduce the required boilerplate for useful ty
 \p For the purposes of conceptualization, we are going to borrow and admittedly abuse some of the mathematical notation available for formulations to which we will mix $\mathlarger{\bm{\{\}[]}}$ as "annotator" symbols for template parameter packs.
 These two annotators will be providing unambiguous intent when translating to C++ code that is considered to be valid in the context of this proposal.
 A C++ template parameter pack $...T$ will be symbolized as a capital letter with an overline (i.e. $\overline{T}$), while the $\bm{sizeof...(T)}$ constant expression will be symbolized as $|\overline{T}|$.
+
 \p Unless otherwise specified, all other notation used in the following formulation refers to its pristine mathematical meaning.
 At the current stage of this incomplete draft, there may be unintentional discrepancies that have to be corrected and will be in a newer version of this draft.
 \subsubsection{The rules of pack annotation}
