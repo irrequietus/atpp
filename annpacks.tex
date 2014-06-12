@@ -145,7 +145,7 @@
 {\color{magenta}reply-to} & \texttt{\href{mailto:irrequietus@gmail.com}{irrequietus@gmail.com}} \\
 {\color{tone1}revision} & \texttt{\GitShortRev{}}\\
 \end{tabular}}}{\slshape Annotating C++ template parameter packs\\
-\bf{{\color{magenta} \GitLongRev{} - \date{\today{} \currenttime{} EEST}}}}}
+\bf{\color{tone1}{current revision:} {\color{magenta} \GitShortRev{} - \date{\today{} \currenttime{} EEST}}}}}
     
 %%% setting the width of the header ruler
 \renewcommand{\headrulewidth}{0.2pt}
@@ -190,6 +190,13 @@ Resourceful combinations of parameter packs with partial specializations, SFINAE
 \p This proposal argues that \textit{optionally annotating C++ template parameter packs} in a backwards compatible manner with information about size, repetition and patterned expansion during their use in template parameter lists can be detrimental in reducing the cost of using templates as computational constructs within a given translation unit.
 As a result, code generation techniques based on simple template programming and meta-programming would require less source code boilerplate containing templates or relying to type-unsafe C++ preprocessor meta-programming to be required.
 \end{abstract}
+
+
+{\color{red}\textbf{DISCLAIMER: }}\textit{{\color{tone1} The current document is a publically disclosed but uncorrected and incomplete draft for a developing C++ proposal.
+{\textbf{\color{red}{It is not a complete work yet.}}}
+As a consequence, several omissions, repetitions or inadequate development of the notions involved are to be taken care of in future releases of this document.
+In order to refer to contents of this particular draft, use its short revision identifier (e.g. {\color{magenta}{\GitShortRev{}}}) slashed with the paragraph number as it appears in side margins of the draft (e.g. {\color{magenta}{\GitShortRev{}}/1}).
+The author will periodically release newer versions of this document in good will, in hope of them being useful in a fruitful discussion on the subject of extending C++ template parameter packs.}}
 
 \section{Introduction}
 \p Template parameter packs can be viewed as product types from a type-theoretical point of view, with cohere but undecided boundary semantics in both their declaration and expansion within a given template parameter list, until the template containing them is a valid instantiative match.
@@ -383,13 +390,7 @@ T \equiv \overline{T'}\{1\}[1]
 \underset{\forall i,j,k \in \mathbb{Z}_{\geq 1} \wedge{[i,j)\neq\emptyset}}{\overline{T}\{i,j\}[n]} &= \mathlarger{\mathlarger{\mathlarger{\{}}}\overline{X}\mid{}\overline{X}\{x\}[n] \wedge{k\in[i,j)}\mathlarger{\mathlarger{\mathlarger{\}}}}
 \end{align}
 \end{enumerate}
-
-\subsection{Accessing individual elements in annotated and non-annotated packs}
-\p \textit{{\color{tone1}There should be a few paragraphs here taking text from the old version.}}
-\section{Using annotated template parameter packs}
-\p \textit{{\color{tone1}There should be a few paragraphs here taking text from the old version.}}
-\subsection{Individual accessors to parameter pack elements}
-\p \textit{{\color{tone1}There should be a few paragraphs here taking text from the old version.}}
+\section{Deployment scenarios}
 \subsection{Easier typelist implementation}
 \p Annotated and non-annotated packs, can be combined for the explicit purpose of declarating constructs useful for manipulating typelists.
 Class template partial specializations deploying substitutive ordering and type accessors can be mixed with a series of constant expressions in the annotated packs used that yield interesting results.
@@ -455,9 +456,25 @@ struct at_pos<N,typevector<T...>>
 { typedef T{N} type; };
 \end{minted}
 \end{enumerate}
+\subsubsection{Combining with different kinds of expansions}
+\p An interesting consequence of \textit{full interval annotation} in function templates derives from the fact that although interval annotation refers to a set of instantiations for which said template is to provide a valid match, it is one instantiation at a time actually occuring that is constrained to be matched with said template.
+According to the annotation rules, an \textit{anchored expansion} whose enclosed constant expression does not fall within the specified expansion interval gets removed from the candidate match set.
 
+\p However, at instantiation time there is a specific, non-alterable length to which the expansion is to occur. Therefore multiple well-formed anchored expansions in function calls can be used in combination with a no-op (e.g. \textbf{void gun(...)\{\}}, notice the use of the ellipsis) to make the following function template definition provide the optimal locality of reference for a series of different expansion semantics depending on the length of the parameter list used.
+The following snippet is taken from a GoingNative 2012 talk\cite{Alexandrescu2012} by Andrei Alexandrescu, to which annotation is bolted on for illustrative purposes.
+\begin{minted}{c++}
+template<class...{4,7} Ts>        /* sizeof...(Ts)= 4, 5 or 6 during instantiation ! */
+void fun(Ts... vs) {              /* we do not specify an anchored expansion yet */
+    gun(A<Ts...{4}>::hun(vs)...); /* sizeof...(Ts) = 4, else no-op */
+    gun(A<Ts...{5}>::hun(vs...)); /* sizeof...(Ts) = 5, else no-op */
+    gun(A<Ts>::hun(vs)...{6});    /* sizeof...(Ts) = 6, else no-op */
+}
+\end{minted}
+\p While the same effect could be achieved through extensive use of SFINAE and/or tag dispatching, it would require a lot more boilerplate.
+Annotation has the advantage of leaving the constant expressions within annotators to either be explicitly specified or evaluated during instantiation based on even more complex constraints.
 \section{Technical specification}
 \subsection{Grammar Additions}
+\p{\color{tone0} This section will be among the last ones to be added because it requires far more constrained yet precise wording as to what would need to be amended in the C++ standard for annotators to be used.}
 \section{Acknowledgements}
 The author would like to thank Ville Voutilainen, current C++ Standard Commitee EWG Chairman for strongly motivating the drafting of this document.
 The "fixed pack size" initiative was originally presented on the C++ std-proposals mailing list by Maurice Bos\textsuperscript{citation pending}.
