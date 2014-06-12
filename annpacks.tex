@@ -192,9 +192,9 @@ As a result, code generation techniques based on simple template programming and
 \end{abstract}
 
 
-{\color{red}\textbf{DISCLAIMER: }}\textit{{\color{tone1} The current document is a publically disclosed but uncorrected and incomplete draft for a developing C++ proposal.
+{\color{red}\textbf{DISCLAIMER: }}\textit{{\color{tone1} The current document is a publically disclosed but uncorrected and incomplete draft for a developing C++ proposal as was announced in the ISO C++ Standard - Future Proposals mailing list \cite{Mak2014}.
 {\textbf{\color{red}{It is not a complete work yet.}}}
-As a consequence, several omissions, repetitions or inadequate development of the notions involved are to be taken care of in future releases of this document.
+As a consequence, several errors, omissions, repetitions or inadequate development of the notions involved are to be taken care of in future releases of this document.
 In order to refer to contents of this particular draft, use its short revision identifier (e.g. {\color{magenta}{\GitShortRev{}}}) slashed with the paragraph number as it appears in side margins of the draft (e.g. {\color{magenta}{\GitShortRev{}}/1}).
 The author will periodically release newer versions of this document in good will, in hope of them being useful in a fruitful discussion on the subject of extending C++ template parameter packs.}}
 
@@ -470,14 +470,14 @@ void fun(Ts... vs) {              /* we do not specify an anchored expansion yet
     gun(A<Ts>::hun(vs)...{6});    /* sizeof...(Ts) = 6, else no-op */
 }
 \end{minted}
-\p While the same effect could be achieved through extensive use of SFINAE and/or tag dispatching, it would require a lot more boilerplate.
+\p While the same effect could be achieved through extensive use of SFINAE and/or tag dispatching, it would require a lot more boilerplate and direct intervention into the function signatures of some of the function templates involved (e.g. \textbf{gun}).
 Annotation has the advantage of leaving the constant expressions within annotators to either be explicitly specified or evaluated during instantiation based on even more complex constraints.
 \section{Technical specification}
 \subsection{Grammar Additions}
 \p{\color{tone0} This section will be among the last ones to be added because it requires far more constrained yet precise wording as to what would need to be amended in the C++ standard for annotators to be used.}
 \section{Acknowledgements}
 The author would like to thank Ville Voutilainen, current C++ Standard Commitee EWG Chairman for strongly motivating the drafting of this document.
-The "fixed pack size" initiative was originally presented on the C++ std-proposals mailing list by Maurice Bos\textsuperscript{citation pending}.
+The "fixed size parameter packs" notion was originally discussed and presented on the C++ std-proposals mailing\cite{Bos2014} list on a thread started by Maurice Bos.
 
 \addcontentsline{toc}{section}{References}
 \printbibliography
