@@ -553,6 +553,7 @@ using classy = typename classy_impl<X...>::type;
 \end{minted}
 \p If we try to solve the same problem using \textit{interval annotation}, there is not even need for a nested template to exist in order to handle the necessary partial specializations.
 The inherent SFINAE character of annotation semantics allows for a very succint formulation of programmer intent directly into C++ code.
+Additionally, there is no need to provide for a long series of specializations even in naive implementations, making constructs depending on pattern matching through long sets of partial specializations easier to deal with.
 \begin{minted}{c++}
 template<typename...>
 struct classy {
@@ -572,6 +573,12 @@ struct classy<X...> {
     { printf("sizeof...(X) in [3,6)\n"); }
 };
 \end{minted}
+\section{Currently undebated sections and other lacunae}
+\p {\color{tone1}{There needs to be a section on the pattern annotator itself.
+The expansion semantics under annotation are distributed throughout the text and should be concentrated in a separate section and discussed explicitly.
+The introductory section needs some work after the newer additions.
+The pattern matching examples for template meta-programming constructs in currently valid C++ need to be given their own example set.
+Technical specification in a format compatible to the standard is currently missing.}}
 
 \section{Technical specification}
 \subsection{Grammar Additions}
