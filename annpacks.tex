@@ -456,7 +456,7 @@ struct at_pos<N,typevector<T...>>
 { typedef T{N} type; };
 \end{minted}
 \end{enumerate}
-\subsubsection{Combining with different kinds of expansions}
+\subsection{Combining with different kinds of expansions}
 \p An interesting consequence of \textit{full interval annotation} in function templates derives from the fact that although interval annotation refers to a set of instantiations for which said template is to provide a valid match, it is one instantiation at a time actually occuring that is constrained to be matched with said template.
 According to the annotation rules, an \textit{anchored expansion} whose enclosed constant expression does not fall within the specified expansion interval gets removed from the candidate match set.
 
@@ -472,7 +472,7 @@ void fun(Ts... vs) {              /* we do not specify an anchored expansion yet
 \end{minted}
 \p While the same effect could be achieved through extensive use of SFINAE and/or tag dispatching, it would require a lot more boilerplate and direct intervention into the function signatures of some of the function templates involved (e.g. \textbf{gun}).
 Annotation has the advantage of leaving the constant expressions within annotators to either be explicitly specified or evaluated during instantiation based on even more complex constraints.
-\subsubsection{The C++11/C++14 block switch effect, better}
+\subsection{The C++11/C++14 block switch effect, better}
 \p Another example can be made with function templates and lambdas, implementing a peculiar kind of "switch" as in the following, valid C++11/C++14 code snippet where lambdas and sfinae are combined to provide a "block switch" effect within the body of the \textit{func\_templ} function template depending on the number of parameters present in a pack.
 
 \begin{minted}{c++}
