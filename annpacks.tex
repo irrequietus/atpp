@@ -472,6 +472,45 @@ void fun(Ts... vs) {              /* we do not specify an anchored expansion yet
 \end{minted}
 \p While the same effect could be achieved through extensive use of SFINAE and/or tag dispatching, it would require a lot more boilerplate and direct intervention into the function signatures of some of the function templates involved (e.g. \textbf{gun}).
 Annotation has the advantage of leaving the constant expressions within annotators to either be explicitly specified or evaluated during instantiation based on even more complex constraints.
+\subsubsection{The C++11/C++14 block switch effect, better}
+\p Another example can be made with function templates and lambdas, implementing a peculiar kind of "switch" as in the following, valid C++11/C++14 code snippet where lambdas and sfinae are combined to provide a "block switch" effect within the body of the \textit{func\_templ} function template depending on the number of parameters present in a pack.
+
+\begin{minted}{c++}
+template<std::size_t N, typename... X, typename F>
+typename std::enable_if<(sizeof...(X) == N),void>::type sel(F&& f) { f(); }
+
+template<std::size_t N, typename... X>
+void sel(...) {} /* no-op */
+
+template<typename... T>
+std::enable_if_t<(sizeof...(T) >= 1) && (sizeof...(T) < 6),void>
+function(T... t) {
+    sel<1,T...>([&t...](){ printf("one\n"); });
+    sel<2,T...>([&t...](){ printf("two\n"); });
+    sel<3,T...>([&t...](){ printf("three\n"); });
+    sel<4,T...>([&t...](){ printf("four\n"); });
+    sel<5,T...>([&t...](){ printf("five\n"); });
+}
+\end{minted}
+
+\p Given than an invalid anchored pack expansion when the pack identifier has been declared with interval annotation removes the template where it is present from the resolution set, it is fairly easy to avoid even the use of \textit{std::enable\_if} C++11/C++14 template when defining the \textit{func\_tmpl} function template and the \textit{sel} helpers.
+
+\begin{minted}{c++}
+template<typename...X, typename F>
+void sel(F&& f) { f(); }
+
+void sel(...) {} /* no-op */
+
+template<typename... T{1,6}>
+void func_tmpl(T... t) {
+    sel<T...{1}>([&t...](){ printf("one\n"); });
+    sel<T...{2}>([&t...](){ printf("two\n"); });
+    sel<T...{3}>([&t...](){ printf("three\n"); });
+    sel<T...{4}>([&t...](){ printf("four\n"); });
+    sel<T...{5}>([&t...](){ printf("five\n"); });
+}
+\end{minted}
+
 \section{Technical specification}
 \subsection{Grammar Additions}
 \p{\color{tone0} This section will be among the last ones to be added because it requires far more constrained yet precise wording as to what would need to be amended in the C++ standard for annotators to be used.}
