@@ -194,7 +194,7 @@ As a result, code generation techniques based on simple template programming and
 
 {\color{red}\textbf{DISCLAIMER: }}\textit{{\color{tone1} The current document is a publically disclosed but uncorrected and incomplete draft for a developing C++ proposal as was announced in the ISO C++ Standard - Future Proposals mailing list \cite{Mak2014}.
 {\textbf{\color{red}{It is not a complete work yet.}}}
-As a consequence, several errors, omissions, repetitions or inadequate development of the notions involved are to be taken care of in future releases of this document.
+As a consequence, several errors, omissions, repetitions or inadequate development of the notions exposed are to be taken care of in future releases of this document.
 In order to refer to contents of this particular draft, use its short revision identifier (e.g. {\color{magenta}{\GitShortRev{}}}) slashed with the paragraph number as it appears in side margins of the draft (e.g. {\color{magenta}{\GitShortRev{}}/1}).
 The author will periodically release newer versions of this document in good will, in hope of them being useful in a fruitful discussion on the subject of extending C++ template parameter packs.}}
 
@@ -227,7 +227,7 @@ A C++ template parameter pack $...T$ will be symbolized as a capital letter with
 
 \p Unless otherwise specified, all other notation used in the following formulation refers to its pristine mathematical meaning.
 At the current stage of this incomplete draft, there may be unintentional discrepancies that have to be corrected and will be in a newer version of this draft.
-\subsubsection{The rules of pack annotation}
+\subsubsection{Fundamentals of parameter pack annotation}
 \begin{enumerate}
 \item\p When $\mathlarger{\bm{\{N\}}}$ or $\mathlarger{\bm{\{N,K\}}}$ or $\mathlarger{\bm{\{\}}}$ are used, they are referring to constant expressions $N$ and $K$ used in the context of the \textit{interval annotator}.
 The first case specifies that the given pack is actually a shorthand for a parameter sequence consisting of exactly $N$ parameters of the same kind (non-type,type-type,template-type).
@@ -242,7 +242,8 @@ The \textit{interval annotator} must always precede the \textit{pattern annotato
 When \textit{anchoring annotation} is present, annotated parameter packs submit to the same matching rules as their equivalent parameter lists where parameters of the same kind (non-type, type-type, template-type) are deterministically specified in a non-pack form in the declaration of their template parameter list.
 \item\p The use of \textit{full interval annotation} is permitted only in class templates since for each pack having \textit{full interval annotation}, a set of parameter lists whose rank equals the rank of the annotation interval is intended to be used, in the form of either class template partial specializations or nested class and function templates within the definition body whose template parameter list contains the \textit{full-interval} annotated pack.
 \item\p When the \textit{pattern annotator} is used in the context of a template argument list, it resolves to expanding the preceding pack as many times as the \textit{pattern factor} dictates.
-\item\p When \textit{full interval annotation} is used in the declaration of a template parameter list for a given pack, that pack can must be expanded using \textit{anchoring annotation}.
+\item\p When \textit{full interval annotation} is used in the declaration of a template parameter list for a given pack, that pack can must be expanded using \textit{anchoring annotation} within the template parameter list of a class or function template.
+Anchoring annotation may be omitted in expansion, but when deployed, the anchoring annotator may not enclose a constant expression whose evaluation would yield an anchor factor outside the interval specified.
 \item\p When \textit{anchoring annotation} has been used upon a pack, each parameter may be accessed individually at a given position by using the pack identifier followed by \textit{anchoring annotation} of a constant expression indicating that position.
 This way of access cannot modify any parameter type present at a given position nor can it be used with non-annotated packs.
 \item\p Multiple anchoring annotated packs may be present at any order within a template parameter list because unlike their non-annotated and interval annotated counterparts, they are deterministically specified in a context where deducibility is guaranteed.
@@ -473,8 +474,9 @@ void fun(Ts... vs) {              /* we do not specify an anchored expansion yet
 \p While the same effect could be achieved through extensive use of SFINAE and/or tag dispatching, it would require a lot more boilerplate and direct intervention into the function signatures of some of the function templates involved (e.g. \textbf{gun}).
 Annotation has the advantage of leaving the constant expressions within annotators to either be explicitly specified or evaluated during instantiation based on even more complex constraints.
 \subsection{The C++11/C++14 block switch effect, better}
-\p Another example can be made with function templates and lambdas, implementing a peculiar kind of "switch" as in the following, valid C++11/C++14 code snippet where lambdas and sfinae are combined to provide a "block switch" effect within the body of the \textit{func\_templ} function template depending on the number of parameters present in a pack.
-
+\p Using function templates and lambdas, a peculiar kind of "switch" may be implemented in {\color{red}{\textbf\textit{valid}}} C++11 / C++14 as in the following code snippet.
+Specifically, lambdas and SFINAE are combined to provide a "block switch" effect within the body of the \textit{func\_templ} function template depending on the number of parameters present in the pack during instantiation.
+The \textit{no-op} calls are optimized away.
 \begin{minted}{c++}
 template<std::size_t N, typename... X, typename F>
 typename std::enable_if<(sizeof...(X) == N),void>::type sel(F&& f) { f(); }
@@ -493,7 +495,8 @@ function(T... t) {
 }
 \end{minted}
 
-\p Given than an invalid anchored pack expansion when the pack identifier has been declared with interval annotation removes the template where it is present from the resolution set, it is fairly easy to avoid even the use of \textit{std::enable\_if} C++11/C++14 template when defining the \textit{func\_tmpl} function template and the \textit{sel} helpers.
+\p An invalid anchored pack expansion for a pack identifier declared with interval annotation removes the template from the resolution candidates.
+Thus, it becomes easier to use such idioms even without the \textit{std::enable\_if} C++11/C++14 template when defining the \textit{func\_tmpl} function template and its assistive functions.
 
 \begin{minted}{c++}
 template<typename...X, typename F>
@@ -509,6 +512,65 @@ void func_tmpl(T... t) {
     sel<T...{4}>([&t...](){ printf("four\n"); });
     sel<T...{5}>([&t...](){ printf("five\n"); });
 }
+\end{minted}
+
+
+\subsection{Enhancing class template partial specializations}
+\p In contrast to function templates, the ability of class templates to have partial specializations makes them more malleable to specifying patterned sequences of types upon which template meta-programming driven type pattern matching occurs.
+A naive implementation for specializing a class template definition according to the size of the parameter pack declared in the template parameter list would require as many partial specializations as the sizes of interest.
+
+\p The following is a non-naive {\color{red}{\textbf\textit{valid}}} C++11 / C++14 implementation where the partial specializations required for this kind of problem are delegated to a nested class template.
+The partial specializations of the nested template are subject to SFINAE by through \textit{std::enable\_if}.
+Unlike the approach we followed in function templates, partial specializations open the door for more complex type calculations for "block-switch" like problems.
+\begin{minted}{c++}
+template<typename... X>
+struct classy_impl {
+private:
+    struct void_{};
+    
+    template<bool B, typename Z>
+    using enabler = typename std::enable_if<B,Z>::type;
+    
+    template<typename, typename...> struct impl_{};
+    
+    template<typename... T>
+    struct impl_<enabler<(sizeof...(T) >= 0 && sizeof...(T) < 3), void_>, T...>
+    { static void deploy(){ printf("[0,3)\n"); } };
+    
+    template<typename... T>
+    struct impl_<enabler<(sizeof...(T) >= 3 && sizeof...(T) < 6), void_>, T...>
+    { static void deploy(){ printf("[3,6)\n"); } };
+    
+    template<typename... T>
+    struct impl_<enabler<(sizeof...(T) >= 6), void_>, T...>
+    { static void deploy(){ printf(">=6\n"); } };
+public:
+    typedef impl_<void_,X...> type;
+};
+
+template<typename... X>
+using classy = typename classy_impl<X...>::type;
+\end{minted}
+\p If we try to solve the same problem using \textit{interval annotation}, there is not even need for a nested template to exist in order to handle the necessary partial specializations.
+The inherent SFINAE character of annotation semantics allows for a very succint formulation of programmer intent directly into C++ code.
+\begin{minted}{c++}
+template<typename...>
+struct classy {
+    static void deploy()
+    { printf("sizeof...(X) >=6\n"); }
+};
+
+template<typename... X{0,3}>
+struct classy<X...> {
+    static void deploy()
+    { printf("sizeof...(X) in [0,3)\n"); }
+};
+
+template<typename... X{3,6}>
+struct classy<X...> {
+    static void deploy()
+    { printf("sizeof...(X) in [3,6)\n"); }
+};
 \end{minted}
 
 \section{Technical specification}
