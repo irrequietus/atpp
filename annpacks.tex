@@ -528,7 +528,7 @@ struct classy_impl {
 private:
     struct void_{};
     
-    template<bool B, typename Z>
+    template<bool B, typename Z> /* C++14 has this as std::enable_if_t */
     using enabler = typename std::enable_if<B,Z>::type;
     
     template<typename, typename...> struct impl_{};
