@@ -218,7 +218,196 @@ In either case, it can contemporaneously offer control over the actual contents 
 \textit{Template parameter pack annotation} depends on proper use of the \textit{annotators}, the semantics of which are analyzed and expanded upon in the following subsections.
 
 \subsection{Using patterns as input for pattern matching}
-\p \textit{{\color{tone1}There should be a few paragraphs here taking text from the old version.}}
+\p The following source code example is C++11/C++14 compliant and illustrates
+some simple ways through which manipulation of template parameter pack declaration
+and expansion are practiced. It becomes quite apparent that because of the
+abstraction packs offer, variadic template parameter and argument lists can be
+useful computational constructs during template instantiations. In the
+following example, a template
+parameter pack is declared, manipulated and expanded in a variety of ways
+fully compatible with the C++11/C++14 standard. Once compiled, the resulting
+binary prints a series of strings on the terminal that are dependent upon
+the C++ features used as computational devices during instantiation phase.
+
+\begin{minted}{c++}
+
+template<typename... Types_T>
+struct packed;
+
+template<typename Head, typename... Tail>
+struct packed<Head,Tail...> {
+    typedef packed<Tail...> pop_front;
+};
+
+template<>
+struct packed<>
+{ typedef packed<> pop_front; };
+\end{minted}
+\begin{minted}{c++}
+template<typename... T>
+void function(packed<T...>) {
+    printf("%d types contained\n", sizeof...(T));
+    function(typename packed<T...>::pop_front());
+}
+\end{minted}
+\begin{minted}{c++}
+template<typename... X, typename... Y>
+void function(packed<X...,long,Y...>) {
+    printf( "%d types contained and a long found!\n"
+          , sizeof...(X) + sizeof...(Y) + 1);
+    function(typename packed<X...,long,Y...>::pop_front());
+}
+\end{minted}
+\begin{minted}{c++}
+template<typename T,typename...X>
+void function(packed<T,T,X...>) {
+    printf("%d IDENTICAL types found out of %d \n", 2, sizeof...(X)+3);
+    function(typename packed<T,T,X...>::pop_front());
+}
+\end{minted}
+\begin{minted}{c++}
+template<typename X, typename Y, typename...T>
+void function(packed<X,Y,T...>) {
+    printf("just %d DIFFERENT types contained\n", 2 + sizeof...(T));
+    function(typename packed<X,Y,T...>::pop_front());
+}
+\end{minted}
+\begin{minted}{c++}
+void function(packed<>) {
+    printf("no types contained anymore!\n");
+}
+\end{minted}
+\begin{minted}{c++}
+int main() {
+   function(packed<char,short,short,long,short,int,int>());
+   return {};
+}
+
+\end{minted}
+
+\subsection{Context dependency of pack declaration and expansion}
+
+\p From the example above, it is evident that pattern matching during
+instantiation is evidently occuring even on specified
+ordered sequences of type patterns in the left bound of a template parameter/argument
+list. For this to happen, whenever template
+parameter packs are involved, they have to be allowed expansion into the actual
+ordered type sequences they abstract in order for things like partial
+ordering to be respected. This occurs only when the context where
+these packs appear in a template parameter list allows for the parameters
+involved to be deduced. Let's begin with a very simple duo of variadic class
+templates in the following code segment:
+
+\begin{minted}{c++}
+template<typename...>
+struct wrapper {};
+
+template<typename... T>
+struct some_template {
+    static void hello()
+    { printf("hello world!\n"); }
+};
+\end{minted}
+
+
+\p A few simple class template partial specializations
+can help illustrating when the pack declaration and expansion are allowed. Notice
+that in both specializations that follow, the template parameter pack is not
+expanded within the same template parameter list where it was declared and
+is ordered as the last argument used (right bound of the template argument
+list of the class template partial specialization). This allows for the pack to be expanded
+within a context where the totality of parameters turned arguments can be deduced,
+therefore correct and specialized instantiation to occur:
+
+\begin{minted}{c++}
+template<typename... X>
+struct some_template<wrapper<X...>,int> { /* X is alone! */
+    static void hello()
+    { printf("hello world from wrapper!\n"); }
+};
+
+template<typename... X>
+struct some_template<wrapper<int,X...>,int> { /* rightmost X! */
+    static void hello()
+    { printf("the first type in the wrapper is an int...\n"); }
+};
+\end{minted}
+
+\p The order of appearance in a given template parameter/argument list of a
+parameter pack respect to non-pack template parameters is the single most
+important constraint for allowing the deduction of all parameters involved
+and thus pack expansion. In the following example, due to the pack appearing
+before a non-pack parameter the compiler cannot deduce all the parameters
+involved when the pack is required to expand in the template argument
+list the following class template partial specialization:
+
+\begin{minted}{c++}
+template<typename... X>
+struct some_template<wrapper<X...,int>,int> { /* cannot deduce parameters! */
+    static void hello()
+    { printf("this code is wrong!"); }
+};
+
+template<typename...X>
+struct some_template<X...,int> { /* cannot deduce parameters! */
+    static void hello()
+    { printf("this code is also wrong!\n"); }
+};
+\end{minted}
+
+\p This behaviour is consistent in both class template partial specializations
+and function template declarations even when multiple template parameter
+pack declarations exist in a given template parameter/argument list. An example
+where these are deployed follows. Notice the ordering of the packs required to expand
+within each instantiation of class template I, allowing for all parameters
+to be deduced:
+
+\begin{minted}{c++}
+/*  Multiple pack expansion in a context where parameters can be deduced! */
+template<typename... A, typename... B, template<typename...> class I>
+void function(I<A...>,I<B...>)
+{ printf("multiple parameter packs in function templates are ok!\n"); }
+\end{minted}
+
+\p As useful as template parameter packs are, their
+declaration and expansion semantics can only currently abstract an ordered sequence
+of parameters of "unconstrained" length in both scenarios. Parameter packs
+cannot expand
+within the same template parameter list where they are declared because of
+their unbound expansion compromising parameter deduction and partial
+ordering in both class and function templates. The same rule is
+valid for template argument lists. However,
+unsurprisingly, the following code
+works because the parameter pack is required to expand within class template
+scope, where the all parameters have already been deduced during
+instantiation and thus the argument list of the enclosed member function
+is valid.:
+
+\begin{minted}{c++}
+template<typename... X>
+struct working {
+    typedef wrapper<X...,int> type;
+    
+    static void function(X...,int) {
+        printf("surprised to see me?\n");
+    }
+};
+\end{minted}
+
+\p In essence, template parameter pack ordering is constrained to be right-bound
+in parameter and argument lists due to its unconstrained expansion
+compromising the deducibility of all the parameters involved, a feature
+necessary for pattern matching to occur.
+By specifying certain constraints in pack declaration
+and/or expansion we would be forcing the creation of specific template parameter
+and argument lists in contexts where parameter deduction is unattainable. In
+the simplest case, expanding a parameter pack in the left bound of a parameter/argument
+list with such constraints
+would yield a finite amount of parameters ("fixed pack size") of the same type
+(non-type,type, template type) for which partial ordering rules would be
+safe to apply. In the more general case, also decide which of the types
+contained already present in the pack should expand when certain constraints are met,
+allowing again the selective nature of partial ordering to occur.
 
 \subsection{Conventions followed during analysis}
 \p For the purposes of conceptualization, we are going to borrow and admittedly abuse some of the mathematical notation available for formulations to which we will mix $\mathlarger{\bm{\{\}[]}}$ as "annotator" symbols for template parameter packs.
