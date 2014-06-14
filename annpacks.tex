@@ -196,7 +196,7 @@ As a result, code generation techniques based on simple template programming and
 {\textbf{\color{red}{It is not a complete work yet.}}}
 As a consequence, several errors, omissions, repetitions or inadequate development of the notions exposed are to be taken care of in future releases of this document.
 In order to refer to contents of this particular draft, use its short revision identifier (e.g. {\color{magenta}{\GitShortRev{}}}) slashed with the paragraph number as it appears in side margins of the draft (e.g. {\color{magenta}{\GitShortRev{}}/1}).
-The author will periodically release newer versions of this document in good will, in hope of them being useful in a fruitful discussion on the subject of extending C++ template parameter packs.}}
+The author will periodically release newer versions of this document at \href{http://atpp.irrequietus.eu}{http://atpp.irrequietus.eu} in good will, in hope of them being useful in a fruitful discussion on the subject of extending C++ template parameter packs.}}
 
 \section{Introduction}
 \p Template parameter packs can be viewed as product types from a type-theoretical point of view, with cohere but undecided boundary semantics in both their declaration and expansion within a given template parameter list, until the template containing them is a valid instantiative match.
@@ -282,7 +282,7 @@ struct fixed_atpos {
         typedef decltype(impl(std::declval<Args_T>()...)) type;
 };
 \end{minted}
-\p Such idea easily prompts for simplification just as was the case with \textit{std::enable\_if} - like templates using template aliases in C++14 or the abbreviated form of \textit{for} loops, in a context where \textit{fixed\_atpos} is valid.
+\p Such idea easily prompts for simplification just as was the case with \textit{std::enable\_if}\cite{JarviWL03} - like templates using template aliases in C++14 or the abbreviated form of \textit{for} loops, in a context where \textit{fixed\_atpos} is valid.
 \begin{minted}{c++}
 template<std::size_t N, typename... Args_T>
 using fixed_atpos_t = typename fixed_atpos<N,Args_T...>::type;
@@ -393,7 +393,7 @@ T \equiv \overline{T'}\{1\}[1]
 \end{enumerate}
 \section{Deployment scenarios}
 \subsection{Easier typelist implementation}
-\p Annotated and non-annotated packs, can be combined for the explicit purpose of declarating constructs useful for manipulating typelists.
+\p Annotated and non-annotated packs, can be combined for the explicit purpose of declarating constructs useful for manipulating typelists \cite{Czarnecki2000,Alexandrescu2001,Abrahams2004}.
 Class template partial specializations deploying substitutive ordering and type accessors can be mixed with a series of constant expressions in the annotated packs used that yield interesting results.
 
 \p The following examples illustrate one possible implementation of the typelist concept using annotated packs, with the typevector class being named such due to type accessors yielding $O(1)$ access during compilation.
@@ -495,7 +495,8 @@ function(T... t) {
 }
 \end{minted}
 
-\p An invalid anchored pack expansion for a pack identifier declared with interval annotation removes the template from the resolution candidates.
+\p We can implement the previous example more easily with interval annotation.
+An invalid anchored pack expansion for a pack identifier declared with interval annotation removes the template from the resolution candidates.
 Thus, it becomes easier to use such idioms even without the \textit{std::enable\_if} C++11/C++14 template when defining the \textit{func\_tmpl} function template and its assistive functions.
 
 \begin{minted}{c++}
@@ -520,7 +521,7 @@ void func_tmpl(T... t) {
 A naive implementation for specializing a class template definition according to the size of the parameter pack declared in the template parameter list would require as many partial specializations as the sizes of interest.
 
 \p The following is a non-naive {\color{red}{\textbf\textit{valid}}} C++11 / C++14 implementation where the partial specializations required for this kind of problem are delegated to a nested class template.
-The partial specializations of the nested template are subject to SFINAE by through \textit{std::enable\_if}.
+The partial specializations of the nested template are subject to removal from the resolution set through \textit{std::enable\_if}.
 Unlike the approach we followed in function templates, partial specializations open the door for more complex type calculations for "block-switch" like problems.
 \begin{minted}{c++}
 template<typename... X>
