@@ -214,91 +214,79 @@ Inferences on their internal structure (the parameters included in a parameter p
 It is followed by a section of a more rigorous exposition of what annotators are. Annotator semantics and their limit equivalence scenarios with syntactical shorthands for packs of predetermined size ("fixed size parameter packs" \cite{Bos2014}) as well as currently valid C++ parameter packs are also examined. The last section of this draft deals with the benefit of adopting \textit{optionally annotated C++ template parameter packs} as a feature for constructs like typelists \cite{Czarnecki2000,Alexandrescu2001} and "block" switches in comparison to more laborious but currently valid C++11 / C++14 implementations.
 Future revisions of this draft will display similar effects of the same \textit{pack annotation} semantics for non-type and template-type template parameters.
 \section{Motivation}
-\p The explicit goal of \textit{template parameter pack annotation} is to offer a optional extension to the current parameter pack declaration and expansion semantics , through which constraints on parameter sequences and patterns contained within a given parameter pack may be specified.
+\p The explicit goal of \textit{template parameter pack annotation} is to offer an optional descriptive "field" to the current parameter pack declaration and expansion semantics, through which constraints on parameter sequences and patterns contained within a given parameter pack may be specified.
 Such a feature can offer deterministic control over the actual contents of a parameter pack within the template parameter list declaration through constant expressions, \textit{without requiring breaking changes to be introduced with past and ongoing C++ standards}.
 
-\p \textit{Template parameter pack annotation factors} are constant expressions enclosed within \textit{template parameter pack annotators} like $\mathlarger{\bm{\{\}}}$ and $\mathlarger{\bm{[]}}$ immediately following parameter pack declaration, in which the parameter pack identifier itself can participate in valid C++11/C++14 context.
+\p \textit{Template parameter pack annotation factors} are constant expressions enclosed within \textit{template parameter pack annotators} like $\mathlarger{\bm{\{\}}}$ and $\mathlarger{\bm{[]}}$ immediately following parameter pack declaration and under certain conditions in expansion.
+They aim for specifying whether the presence of a pack in a template parameter list represents a valid match for instantiation to occur when the size of the pack is specific or within a left-closed, right-open interval of values (i.e. $\mathlarger{\bm{\{\}}}$ \textit{annotator}), whether it is comprised of a repeated pattern of parameters or not (i.e. $\mathlarger{\bm{[]}}$ \textit{annotator}).
+Only constant expressions can be used within \textit{annotators}, including expressions using pack identifiers that have already been declared in the template parameter list of the template involved.
+These semantics arise from the typical uses of class and function templates where parameter packs are involved for \textit{pattern matching purposes}, examples of which are following.
 
 \subsection{Using patterns as input for pattern matching}
-\p The following source code example is C++11/C++14 compliant and illustrates
-some simple ways through which manipulation of template parameter pack declaration
-and expansion are practiced. It becomes quite apparent that because of the
-abstraction packs offer, variadic template parameter and argument lists can be
-useful computational constructs during template instantiations. In the
-following example, a template
-parameter pack is declared, manipulated and expanded in a variety of ways
-fully compatible with the C++11/C++14 standard. Once compiled, the resulting
-binary prints a series of strings on the terminal that are dependent upon
-the C++ features used as computational devices during instantiation phase.
+\p In the following example, template parameter packs are declared and expanded class template partial specializations and function template overloads in a variety of ways fully compatible with the C++11/C++14 standard, for pattern matching purposes. Once compiled, the resulting binary prints a series of strings on the terminal that are dependent upon the C++ templates and other features are used as computational devices during instantiation phase.
 
 \begin{minted}{c++}
+#include <cstdio>
 
 template<typename... Types_T>
-struct packed;
+struct packed; /* class template declaration */
 
 template<typename Head, typename... Tail>
-struct packed<Head,Tail...> {
+struct packed<Head,Tail...> { /* class template partial specialization */
     typedef packed<Tail...> pop_front;
 };
 
 template<>
-struct packed<>
+struct packed<> /* class template explicit specialization */
 { typedef packed<> pop_front; };
-\end{minted}
-\begin{minted}{c++}
+
 template<typename... T>
-void function(packed<T...>) {
-    printf("%d types contained\n", sizeof...(T));
+void function(packed<T...>) { /* general case */
+    printf( "%lu types contained in the pack, pack has still %lu\n"
+          , sizeof...(T)
+          , sizeof...(T) );
     function(typename packed<T...>::pop_front());
 }
-\end{minted}
-\begin{minted}{c++}
-template<typename... X, typename... Y>
-void function(packed<X...,long,Y...>) {
-    printf( "%d types contained and a long found!\n"
-          , sizeof...(X) + sizeof...(Y) + 1);
-    function(typename packed<X...,long,Y...>::pop_front());
-}
-\end{minted}
-\begin{minted}{c++}
+
 template<typename T,typename...X>
-void function(packed<T,T,X...>) {
-    printf("%d IDENTICAL types found out of %d \n", 2, sizeof...(X)+3);
+void function(packed<T,T,X...>) { /* notice the repetition */
+    printf( "2 identical types found, pack has still %lu \n"
+          , sizeof...(X) + 2 );
     function(typename packed<T,T,X...>::pop_front());
 }
-\end{minted}
-\begin{minted}{c++}
+
 template<typename X, typename Y, typename...T>
-void function(packed<X,Y,T...>) {
-    printf("just %d DIFFERENT types contained\n", 2 + sizeof...(T));
+void function(packed<X,Y,X,Y,T...>) { /* notice a repeating pattern */
+    printf("4 types are a pattern of 2, pack has still %lu\n", 4 + sizeof...(T));
     function(typename packed<X,Y,T...>::pop_front());
 }
-\end{minted}
-\begin{minted}{c++}
-void function(packed<>) {
+
+template<typename X, typename Y, typename...T>
+void function(packed<X,Y,T...>) { /* notice the difference with T,T,X... */
+    printf("2 different types found, pack has still %lu\n", 2 + sizeof...(T));
+    function(typename packed<X,Y,T...>::pop_front());
+}
+
+void function(packed<>) { /* better match than packed<T...>, with T... empty */
     printf("no types contained anymore!\n");
 }
-\end{minted}
-\begin{minted}{c++}
+
 int main() {
-   function(packed<char,short,short,long,short,int,int>());
+   function(packed< char, short, short, long , int
+                  , char, int  , char , short, short
+                  , int , int>());
    return {};
 }
-
 \end{minted}
 
+\p The previous example shows how several behaviors of C++ class and function template features are combined for the "best match" to prevail according to which parameter pattern is more specialized in size and repetition for the template instantiation we are dealing with.
+
+\p Currently, pack semantics do not allow us to look further into their structure unless more code is written for such an occasion.
+They can be expanded only when present in a context where all of the parameters in the template parameter list they appear can be deduced and thus why they must appear last in a declarative template parameter list.
+This context dependency of parameter packs is due to their omnicomprehensive character of abstracting zero or more parameters without any size or pattern constraints.
 \subsection{Context dependency of pack declaration and expansion}
 
-\p From the example above, it is evident that pattern matching during
-instantiation is evidently occuring even on specified
-ordered sequences of type patterns in the left bound of a template parameter/argument
-list. For this to happen, whenever template
-parameter packs are involved, they have to be allowed expansion into the actual
-ordered type sequences they abstract in order for things like partial
-ordering to be respected. This occurs only when the context where
-these packs appear in a template parameter list allows for the parameters
-involved to be deduced. Let's begin with a very simple duo of variadic class
-templates in the following code segment:
+\p In order to better illustrate the template parameter list context of current pack semantics, we begin with a very simple duo of variadic class templates in the following code segment:
 
 \begin{minted}{c++}
 template<typename...>
@@ -312,9 +300,7 @@ struct some_template {
 \end{minted}
 
 
-\p A few simple class template partial specializations
-can help illustrating when the pack declaration and expansion are allowed. Notice
-that in both specializations that follow, the template parameter pack is not
+\p In the specializations that follow, the template parameter pack is not
 expanded within the same template parameter list where it was declared and
 is ordered as the last argument used (right bound of the template argument
 list of the class template partial specialization). This allows for the pack to be expanded
@@ -358,7 +344,7 @@ struct some_template<X...,int> { /* cannot deduce parameters! */
 \end{minted}
 
 \p This behaviour is consistent in both class template partial specializations
-and function template declarations even when multiple template parameter
+and function template declarations even when \textit{multiple template parameter}
 pack declarations exist in a given template parameter/argument list. An example
 where these are deployed follows. Notice the ordering of the packs required to expand
 within each instantiation of class template I, allowing for all parameters
