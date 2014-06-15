@@ -45,6 +45,7 @@
 
 \usepackage{newtxtext}
 \usepackage{newtxmath}
+\usepackage{cancel}
 \usepackage{upgreek}
 \usepackage{bookmark}
 \usepackage{bm}
@@ -388,59 +389,78 @@ void function(T...) { printf("T...\n"); }
 Template parameter pack annotation is about offering \textit{a systematic way for clustering explicit size and pattern constraints within the template parameter list itself}.
 
 \section{Analyzing template parameter pack annotation}
-\p For the purposes of conceptualization, we are going to borrow and admittedly abuse some of the mathematical notation available for formulations to which we will mix $\mathlarger{\bm{\{\}[]}}$ as "annotator" symbols for template parameter packs.
-These two annotators will be providing unambiguous intent when translating to C++ code that is considered to be valid in the context of this proposal.
+\p For the purposes of conceptualization, we are going to borrow and admittedly abuse some of the mathematical notation available for formulations, mixed with the annotators $\mathlarger{\bm{\{\}[]}}$ that we are going to use when we translate this into the proposed C++ syntax for annotation.
 A C++ template parameter pack $...T$ will be symbolized as a capital letter with an overline (i.e. $\overline{T}$), while the $\bm{sizeof...(T)}$ constant expression will be symbolized as $|\overline{T}|$.
 
 \p Unless otherwise specified, all other notation used in the following formulation refers to its pristine mathematical meaning.
 At the current stage of this incomplete draft, there may be unintentional discrepancies that have to be corrected and will be in a newer version of this draft.
-\subsection{Fundamentals of parameter pack annotation}
+\subsection{Parameter pack annotation semantics}
 \begin{enumerate}
-\item\p When $\mathlarger{\bm{\{N\}}}$ or $\mathlarger{\bm{\{N,K\}}}$ or $\mathlarger{\bm{\{\}}}$ are used, they are referring to constant expressions $N$ and $K$ used in the context of the \textit{interval annotator}.
-The first case specifies that the given pack is actually a shorthand for a parameter sequence consisting of exactly $N$ parameters of the same kind (non-type,type-type,template-type).
-When two comma-separated constant expressions are used, the \textit{interval annotator} refers to the a valid right-open interval of $[N,K)\in\mathbb{Z}_{\geq 1}$ within which the size of a pack matching the expression should be in order for the match to be valid.
-When no expressions are used as in the last case, the intent for a pack $\overline{T}$ is equivalent to $\mathlarger{\bm{\{|\overline{T}|\}}}$ and $\mathlarger{\bm{\{0,|\overline{T}|\}}}$ which are \textit{interval annotation} for a parameter pack of zero or more parameters of the same kind (non-type,type-type,template-type).
-\item\p When $\mathlarger{\bm{[]}}$ or $\mathlarger{\bm{[]}}$ or $\mathlarger{\bm{[N]}}$ are used, the \textit{pattern annotator} specifies that said annotated pack is made out of either 1 (i.e. $[]$ or $[1]$) or more ($[N]$) repetitions of the same sequence of types.
-The size of the pack does not get altered by the \textit{pattern annotator} but in order for such an annotated pack to be a valid match, its size must be an exact multiple of the constant expression in the \textit{pattern annotator}.
 \item\p An annotated template parameter pack is an n-ordered sequence of zero or more template parameters of the same type (non-type, type-type, template-type) whose identifier is followed by the \textit{interval} and \textit{pattern} annotators.
 The \textit{interval annotator} must always precede the \textit{pattern annotator} while both follow the identifier used for the \textit{annotated template parameter pack}.
+The \textit{interval annotator} serves as an explicit size constraint, while the \textit{pattern annotator} serves as the explicit pattern constraint we discussed about before.
+
+\item\p In the context of the \textit{interval annotator}, when $\bm{\{N\}}$ or $\bm{\{N,K\}}$ are used, they refer to constant expressions $\bm{N}$ and $\bm{K}$ and are referred to as \textit{interval factors} of an \textit{interval annotation}.
+The first case specifies that a given pack is actually a shorthand for a parameter sequence consisting of exactly $\bm{N}$ parameters of the same kind (non-type,type-type,template-type), but not necessarily resolving to the same type during parameter to argument conversion.
+When two comma-separated constant expressions are used, the \textit{interval annotator} refers to a valid right-open interval of $\bm{[N,K)\in\mathbb{Z}_{\geq 1}}$ within which the size of a pack matching the expression should be in order for the match to be valid.
+When no constant expressions are used, $\bm{\overline{T}\{\}}$ is equivalent to $\bm{\overline{T}}$, $\bm{\{|\overline{T}|\}}$ and $\bm{\{0,|\overline{T}|\}}$ which abstract a parameter pack of zero or more parameters of the same kind (non-type,type-type,template-type), but not necessarily resolving to the same type during parameter to argument conversion.
+This is how \textit{interval annotation} resolves into parameter pack semantics as we know them in C++11 / C++14.
+
 \item\p When the \textit{interval} annotator is used with a single constant expression, it can be referred to as \textit{anchoring annotator} and the annotation itself referred to as \textit{anchoring annotation} regardless of whether a \textit{pattern annotator} follows or not.
-\item\p Annotated parameter packs that are coexisting with non-annotated parameter packs gain precedence in partial ordering over the latter unless they are equivalent forms, in which case a match cannot be made.
-When \textit{anchoring annotation} is present, annotated parameter packs submit to the same matching rules as their equivalent parameter lists where parameters of the same kind (non-type, type-type, template-type) are deterministically specified in a non-pack form in the declaration of their template parameter list.
-\item\p The use of \textit{full interval annotation} is permitted only in class templates since for each pack having \textit{full interval annotation}, a set of parameter lists whose rank equals the rank of the annotation interval is intended to be used, in the form of either class template partial specializations or nested class and function templates within the definition body whose template parameter list contains the \textit{full-interval} annotated pack.
-\item\p When the \textit{pattern annotator} is used in the context of a template argument list, it resolves to expanding the preceding pack as many times as the \textit{pattern factor} dictates.
-\item\p When \textit{full interval annotation} is used in the declaration of a template parameter list for a given pack, that pack can must be expanded using \textit{anchoring annotation} within the template parameter list of a class or function template.
-Anchoring annotation may be omitted in expansion, but when deployed, the anchoring annotator may not enclose a constant expression whose evaluation would yield an anchor factor outside the interval specified.
-\item\p When \textit{anchoring annotation} has been used upon a pack, each parameter may be accessed individually at a given position by using the pack identifier followed by \textit{anchoring annotation} of a constant expression indicating that position.
-This way of access cannot modify any parameter type present at a given position nor can it be used with non-annotated packs.
-\item\p Multiple anchoring annotated packs may be present at any order within a template parameter list because unlike their non-annotated and interval annotated counterparts, they are deterministically specified in a context where deducibility is guaranteed.
+\textit{Anchoring annotation} is equivalent to having declared a template parameter list with a fixed number of parameters.
+
+\item\p In the context of the \textit{pattern annotator} $\bm{[]}$ or $\bm{[1]}$ or $\bm{[N]}$ are used for declaring an annotated parameter pack made out of either a single ($\bm{[]}$ or $\bm{[1]}$) or more ($\bm{[N]}$) repetitions of the same parameter pattern.
+Thus, in \textit{pattern annotation}, the size of the pack does not get altered by what was specified in its preceding \textit{interval annotation}.
+In order for such a pack to be considered in a resolution set as a viable candidate, its size during instantiation must be an exact multiple of the \textit{pattern annotation factor}, given that it must be comprised of an exact multiple of repetitions of a parameter sequence whose size \textbf{\color{red}{\textit{is}}} the \textit{pattern annotation factor}.
+
+\item\p Annotated parameter packs co-declared with regular parameter packs in the same template parameter list gain partial ordering precedence over the latter unless they constitute equivalent forms of regular packs themselves, in which case a match cannot be made because parameter deduction cannot be guaranteed.
+Multiple packs with \textit{anchoring annotation} may be present with any order in the declaration of a template parameter list.
+Unlike their non-annotated and interval annotated counterparts, they are deterministically specified in a context where deducibility is guaranteed.
+
+\item\p When \textit{anchoring annotation} is used in an expansion context it must immediately follow the unpacking ellipsis.
+Using an \textit{anchoring annotator} after the pack specifier without it being expressed as expanding, results to individually accessing a parameter with an order specified by the enclosed constant expression.
+The \textit{anchoring annotator} is called \textit{individual accessor} in this context.
+If such an expression is invalid, the code is ill-formed.
+
+\item\p When the \textit{pattern annotator} is used in an expansion context, it must follow the unpacking ellipsis or an eventual \textit{anchoring annotator}; it always resolves to expanding the preceding pack as many times as the \textit{pattern factor} dictates and is not indicative of any constraints upon an already declared parameter pack.
+
+\item\p \textit{Interval annotation} can only be used in the declaration of a template parameter list.
+A template instantiation or argument list involving parameter expansion of pack declared with \textit{interval annotation}, with an anchoring factor in expansion not within the interval specified by the \textit{interval annotation} used in its declaration results in its removal from the resolution set within the involved translation unit.
+Invalid intervals, negative annotation factors of any kind, zero-valued anchoring and / or pattern factors have the same removal effect.
+This is practically equivalent to SFINAE removal of annotated packs.
+
+\item\p The template parameter pack specifier can be used in constant expressions of any of its annotation factors.
+
 \end{enumerate}
-\subsection{Why individual accessors are inevitable}
-\p One of the characteristics of the parameter pack is the inability to access individual parameters contained for a given index.
-While this character may be acceptable for parameter packs as they stand right now in the C++11/C++14 standards, proposing any kind of "fixed size packs" even as convenient shorthands rapidly introduces two additional problems.
-In order to analyze these, we will use $\bm{()}$ enclosed constant expressions for referring to isolated "fixed size packs" in order to separate the context of such proposals with the context of our current draft.
-
+\subsection{Anchoring annotation, fixed size parameter packs and individual accessors}
+\p One of the current characteristics of C++ parameter packs is the inability to access individual parameters contained for a given index without relying on source code boilerplate using recursive template instantiations.
+Proposing "fixed sized parameter packs" \cite{Bos2014} as convenient shorthand notation without individual access (\textit{despite it lays the ground for it!}) does not yield any substantial benefit over parameter pack semantics for the \textit{explicit size constraint} that was previously discussed in template mediated pattern matching or the use of explicitly specified parameter types in parameter lists, for a series of reasons.
 \begin{enumerate}
-\item\p Given a parameter pack $T$ that has "fixed size pack" semantics (i.e. always expanding to a non-changing, pre-determined ordered sequence of parameters) poses the problem of using those individual parameters within constructs in template argument lists and within template definition body.
-This does not happen with parameter packs as we know them because they do not expand to pre-determined ordered sequences of known length, with their use being limited in specifying recursive instantiations and calls in class and function templates respectively.
+\item \p Adopting such syntax for just the sake of fixed size parameter packs does not reduce code boilerplate requirements when a specific pattern of parameters must be specified in a class template partial specialization or a function template overload, despite any perceived benefits in non-type parameter expansion within initializer lists.
+\item \p If the constant expression used for specifying size cannot make use of the already declared pack specifier the "fixed size pack" is abstracted with, such packs are not able to do any inference on the internal structure of the parameter pack they are abstracting, increasing SFINAE cost in subsequent class template partial specializations and function template overloads.
+\item \p Lacking individual access means inability to specify declarations using parameters specified in such a pack without additional boilerplate, which puts them in a disadvantageous position respect to forms explicitly specifying parameter sequence and reducing them to just a shorthand during parameter pack declaration in a given template parameter list.
+\end{enumerate}
+\p In the following example, we are using $\bm{()}$ enclosed constant expressions for referring to isolated "fixed size parameter packs" in order to separate the context of such a proposal\cite{Bos2014} with the context of our current draft and annotator syntax.
+The lack of individual parameter accessors becomes immediately evident in such a context because it does not allow for C++ parametric polymorphism to work by making it impossible for individual parameters contained in such packs to be used in declarations within template definitions.
+This is a syntactical handicap over templates where parameter lists are explicitly specified in parameter sequence forms, which fixed size parameter packs aim to replace.
 \begin{minted}{c++}
-/* theoretical code in the context of another proposal: "fixed size packs".*/
-template<typename...(3) Args_T> /* = template<typename,typename,typename> */
+/* code in the context of just proposing "fixed sized parameter packs" */
+template<typename... Args_T(3)> /* = template<typename,typename,typename> */
 struct class_template
-{ /* how are "fixed size packs" different from regular packs? */ };
+{ /* must have template<typename,typename,typename> semantics, access ? */ };
 
-template<typename...(3) Args_T> /* = template<typename,typename,typename> */
+template<typename... Args_T(3)> /* = template<typename,typename,typename> */
 void function(Args_T... args)   /* "fixed size pack" expanding syntax */
-{ /* how are args going to be used differently from regular packs? */ }
+{ /* must have template<typename,typename,typename> semantics, access ? */ }
 \end{minted}
-\item\p Even if "fixed size packs" are introduced lacking individual accessors, it would be trivial enough for programmers of any level of C++ expertise to write a simple class template providing the same effect, to the point of becoming a nuissance not having it in the standard as a library feature in the context of "fixed size packs" proposals.
+\p Even if such packs were to be introduced lacking individual accessors, it would be trivial enough for programmers of any level of C++ expertise to write a simple class template providing the same effect, to the point of becoming a nuissance not having it in the standard as a library feature.
 \begin{minted}{c++}
 template<std::size_t N, typename... Args_T>
 struct fixed_atpos {
     public:
         struct access_error {};
     private:
-        template<typename...(K) Fixed_T, typename X, typename... Types_T>
+        template<typename... Fixed_T(K), typename X, typename... Types_T>
         static typename std::enable_if<(K < sizeof...(Args_T)),X>::type
         impl(Fixed_T...,X,Types_T...); /* fixed (determined) pack = ok */
         
@@ -449,15 +469,27 @@ struct fixed_atpos {
         typedef decltype(impl(std::declval<Args_T>()...)) type;
 };
 \end{minted}
-\p Such idea easily prompts for simplification just as was the case with \textit{std::enable\_if}\cite{JarviWL03} - like templates using template aliases in C++14 or the abbreviated form of \textit{for} loops, in a context where \textit{fixed\_atpos} is valid.
+\p Such code easily prompts for simplification just as was the case with \textit{std::enable\_if}\cite{JarviWL03} - like templates using template aliases in C++14 or the abbreviated form of \textit{for} loops, in a context where \textit{fixed\_atpos} is valid.
 \begin{minted}{c++}
 template<std::size_t N, typename... Args_T>
 using fixed_atpos_t = typename fixed_atpos<N,Args_T...>::type;
 \end{minted}
-\end{enumerate}
 
-\subsection{Understanding annotation equivalence}
-\p First, a parameter pack is an n-ordered sequence (n-tuple) of zero or more parameter types of the same kind (non-type, type-type, template-type).
+\p In the context of this draft, \textit{anchoring annotation} in declarative and expansive context has the advantage of behaving like fixed size parameter packs \cite{Bos2014} without their disadvantages in either non-type, type-type and template-type parameter form.
+
+\p\textit{Anchoring annotation} is a limit case of template parameter pack annotation, which is more malleable to solving both \textit{explicit size} and \textit{patterned repetition} problems in pattern matching computational constructs often used in modern C++ code, without requiring introduction of backwards - breaking changes or additional boilerplate to compete with explicitly specified template parameter lists.
+The latter is also due to its use for individual access of parameters when a pack has been declared with \textit{anchoring annotation}.
+
+\p The final effect is to significantly reduce repetitive source code boilerplate through complex but type-unsafe preprocessor meta-programming approaches for resolution set manipulation, while lessening the need for SFINAE constructs outside the declaration of a template parameter list.
+This leads to concise, error-free and more readable code, some of which is presented in later sections.
+
+\subsection{Understanding annotation equivalence through a tentative formulation}
+\p {\color{tone1}Prior to reading this section, {\color{magenta}a fair warning}.
+The meaning of this section is conceptualization of the rules laid out before for annotated parameter packs.
+There is some abuse of familiar symbols which happens after overlined identifiers like $\overline{A}$ for the sake of illustrating the concepts involved.
+The semantics of $\{\}$ and $[]$ obviously refer to annotators when following an overline identifier since these are the ones we are going to be using when translating these concepts into proposed C++ syntax.}
+
+\p We already know that parameters pack are n-ordered sequences (n-tuples) of zero or more parameter types of the same kind (non-type, type-type, template-type), of not necessarily identical parameters.
 They can be viewed as product types and modelled using nested ordered pairs, in a way reminiscent of a left/right fold of a cons function over the n-tuple that they actually are.
 The following two equivalent formulations inductively define a template parameter pack of $t_{0},t_{1},t_{2},...t_{n-1}$ are known to be valid representational approaches.
 The most basic annotator equivalence is added to both.
@@ -518,46 +550,56 @@ This will be formulated through the following convention that can be generalized
 \end{align}
 \p After formulating (7) as the "annotated" form of a template parameter pack, there is an interesting and intuitive observation of whether there can be an equivalence between the "annotated" form and template parameter packs so that any template parameter pack can be rewritten into an annotated form of another parameter pack for which explicit specification on its size and eventually occurring repetitive patterns may be specified.
 \begin{align}
-\underset{\exists j,n \in \mathbb{Z}_{\geq 1}}{\overline{A}} = \overline{A'}\{j\}[n]
+\underset{\exists j\in\mathbb{Z}_{\geq 0}\wedge{}n\in\mathbb{Z}_{\geq 1}}{\overline{A'}\{j\}[n]} \equiv \overline{A}
 \end{align}
-There are just three cases where (8) has to be proven valid: the single parameter, the parameter pack and a series of parameters in a template parameter list that are not part of a parameter pack.
+\p There are just three cases where (8) has to be proven valid: the single parameter and empty parameter pack, the non-empty parameter pack and the pack constructed through pattern repetition.
 \begin{enumerate}
-\item\p A single parameter may be viewed as the expansion of annotated pack with a single parameter, therefore for a given parameter $T$, there is indeed a $\overline{T'}$ when $j=n=1$, making $T$ equivalent to $\overline{T'}\{1\}[1]$:
+\item\p A single parameter may be viewed as the expansion of an annotated pack with a single parameter, therefore for a given parameter $A$, when $j=n=1$, making $\overline{A}\{1\}[1]$ equivalent to $A$.
+For the empty parameter pack case, according to annotation semantics, we have $j=0,n=1$:
 \begin{align}
-T \equiv \overline{T'}\{1\}[1]
+\underset{j=n=1}{\overline{A}\{j\}[n]} &\equiv A \\
+\underset{j=0,n=1}{\overline{A}\{j\}[n]} &\equiv \underset{|A| = 0}{A}
 \end{align}
-\item\p A finite sequence of parameters of the same kind (non-type,type-type,template-type) $T_{0},T_{1},T_{1},...,T_{m-1}$ constituting an m-tuple themselves but not making part of a parameter pack but of an explicitely specified ordered sequence of parameters in the declaration of a template parameter list, can make use of the result of (9) and be rewritten in the form of an annotated pack as follows:
+\item\p A finite sequence of parameters of the same kind (non-type,type-type,template-type) $A_{0},A_{1},A_{1},...,A_{m-1}$ constituting an m-tuple themselves, can make use of the result of (9) and be rewritten in the form of an annotated pack as follows:
 \begin{align}
-\langle{}T_{0},T_{1},T_{2},...,T_{m-1}\rangle{} &=\langle{}\overline{T'_{0}}\{1\}[1],\overline{T'_{1}}\{1\}[1],\overline{T'_{2}}\{1\}[1],...,\overline{T'_{m-1}}\{1\}[1]\rangle{}=\nonumber\\
-&=\overline{T'}\overbrace{\{1+1+...+1\}}^{m}[1] = \underset{j=m,n=1}{\overline{T'}\{m\}[1]} =\nonumber\\
-&=\overline{T'}\{j\}[n]
+\overline{A} = \overbrace{\langle{}A_{0},A_{1},A_{2},...,A_{m-1}\rangle{}}^{m \in \mathbb{Z}_{\geq 1}} &=\overbrace{\langle{}\overline{A_{0}}\{1\}[1],\overline{A_{1}}\{1\}[1],\overline{A_{2}}\{1\}[1],...,\overline{A_{m-1}}\{1\}[1]\rangle{}}^{m}=\nonumber\\
+&=\overline{A}\overbrace{\{1+1+...+1\}}^{m}[1] = \underset{j=m,n=1}{\overline{A}\{m\}[1]} =\nonumber\\
+&=\overline{A}\{j\}[n]
 \end{align}
-\item\p It is trivial to generalize (10) for a variadic parameter pack $\overline{T}$ if we take advantage of $sizeof...(T)$, as follows:
+\item\p For cases where the \textit{pattern annotator} is to have values greater than 1, we are really declaring a parameter pack $\overline{A}$ that is constructed by multiple repetitions of another pack $\overline{A'}$:
 \begin{align}
-\overline{T} &= \langle{}T_{0},T_{1},T_{2},...,T_{sizeof...(T)-1}\rangle{}=\nonumber\\
-&=\langle{}\overline{T'_{0}}\{1\}[1],\overline{T'_{1}}\{1\}[1],\overline{T'_{2}}\{1\}[1],...,\overline{T'_{sizeof...(T)-1}}\{1\}[1]\rangle{}=\nonumber\\
-&=\underset{j=sizeof...(T'),n=1}{\overline{T'}\{sizeof...(T')\}[1]}=\nonumber\\
-&=\overline{T'}\{j\}[n]
-\end{align}
-\item\p The last step is for cases where the "pattern" annotator is to have values greater than 1, as is the case when the parameter pack is constructed by multiple repetitions of another one:
-\begin{align}
-\overline{T} &= \langle{}\overbrace{\underbrace{T_{0},T_{1},T_{2},\dots,T_{m-1}}_{0}}^{m},\overbrace{\underbrace{T_{0},T_{1},T_{2},\dots,T_{m-1}}_{1}}^{m},\dots,\underbrace{T_{0},T_{1},T_{2},\dots,T_{m-1}}_{n-1}\rangle{}=\nonumber\\
-&=\langle{}\underbrace{\overline{T'}\{m\}[1],\overline{T'}\{m\}[1],\dots,\overline{T'}\{m\}[1]}_{n}\rangle{}=\nonumber\\
-&=\overline{T'}\{\underbrace{m+m+m+\dots+m}_{n}\}[n] = \overline{T'}\{\underset{j=n\times{m}}{n\times{m}}\}[n]=\nonumber\\
-&=\overline{T'}\{j\}[n]
-\end{align}
-\item\p Even when a new parameter pack is constructed by mixing packs that are completely unrelated regarding number of parameter packs contained, provided they are of the same kind (non-type,type-type,template-type), annotated form can be used to describe them.
-\begin{align}
-\overline{T}&=\underset{\overline{T_{0}} \neq\overline{T_{1}}\neq\overline{T_{2}}\neq\dots\neq\overline{T_{m-1}}}{\langle{}\overline{T_{0}},\overline{T_{1}},\overline{T_{2}},\dots,\overline{T_{m-1}}\rangle} =\nonumber\\&= \langle\overline{T'_{0}}\{j_{0}\}[n_{0}],\overline{T'_{1}}\{j_{1}\}[n_{1}],\overline{T'_{2}}\{j_{2}\}[n_{2}],\dots,\overline{T'_{m-1}}\{j_{m-1}\}[n_{m-1}]\rangle{}=\nonumber\\
-&=\underset{j=j_{0}+j_{1}+j_{2}+...+j_{m-1},n=1}{\overline{T'}\{j_{0}+j_{1}+j_{2}+...+j_{m-1}\}[1]}=\nonumber\\
-&=\overline{T'}\{j\}[n]
-\end{align}
-\item\p Another way with which
-
-\begin{align}
-\underset{\forall i,j,k \in \mathbb{Z}_{\geq 1} \wedge{[i,j)\neq\emptyset}}{\overline{T}\{i,j\}[n]} &= \mathlarger{\mathlarger{\mathlarger{\{}}}\overline{X}\mid{}\overline{X}\{x\}[n] \wedge{k\in[i,j)}\mathlarger{\mathlarger{\mathlarger{\}}}}
+\overline{A} &= \langle{}\overbrace{\underbrace{A_{0},A_{1},A_{2},\dots,A_{m-1}}_{0}}^{m},\overbrace{\underbrace{A_{0},A_{1},A_{2},\dots,A_{m-1}}_{1}}^{m},\dots,\overbrace{\underbrace{A_{0},A_{1},A_{2},\dots,A_{m-1}}_{n-1}}^{m}\rangle{}=\nonumber\\
+&=\langle{}\underbrace{\overline{A'}\{m\}[1],\overline{A'}\{m\}[1],\dots,\overline{A'}\{m\}[1]}_{n=|\overline{A}|,\overline{A'}=\langle{}A_{0},A_{1},A_{2},\dots,A_{m-1}\rangle}\rangle{}=\nonumber\\
+&=\overline{A'}\{\underbrace{m+m+m+\dots+m}_{n}\}[n] = \overline{A'}\{\underset{j=n\times{m}}{n\times{m}}\}[n]=\nonumber\\
+&=\overline{A'}\{j\}[n]
 \end{align}
 \end{enumerate}
+\p Even when a new parameter pack is constructed by mixing packs that are completely unrelated regarding number of parameter packs contained, provided they are of the same kind (non-type,type-type,template-type), annotated form can be used to describe them.
+\begin{align}
+\overline{A}&=\underset{\overline{A_{0}} \neq\overline{A_{1}}\neq\overline{A_{2}}\neq\dots\neq\overline{A_{m-1}}}{\langle{}\overline{A_{0}},\overline{A_{1}},\overline{A_{2}},\dots,\overline{A_{m-1}}\rangle} =\nonumber\\&= \langle\overline{A'_{0}}\{j_{0}\}[n_{0}],\overline{A'_{1}}\{j_{1}\}[n_{1}],\overline{A'_{2}}\{j_{2}\}[n_{2}],\dots,\overline{A'_{m-1}}\{j_{m-1}\}[n_{m-1}]\rangle{}=\nonumber\\
+&=\underset{j=j_{0}+j_{1}+j_{2}+...+j_{m-1},n=1}{\overline{A'}\{j_{0}+j_{1}+j_{2}+...+j_{m-1}\}[1]}=\nonumber\\
+&=\overline{A'}\{j\}[n]
+\end{align}
+\p The generalization of \textit{anchoring annotation} as tentatively formulated before is the \textit{interval annotation}, which actually refers to a set of valid anchored packs whose rank is that of the annotation interval.
+Given the claims of the section in annotation semantics and the formulations involving equivalences so far, template parameter pack annotation in its entirety can be be trivially deduced into a tentative series of formulations as follows.
+\begin{align}
+\underset{\exists j\in\mathbb{Z}_{\geq 0}\wedge{}n\in\mathbb{Z}_{\geq 1}}{\overline{A}} &\equiv{\overline{A'}\{j\}[n]}\\
+\underset{\exists i\in\mathbb{Z}_{\geq 0}\wedge{}j,n\in\mathbb{Z}_{\geq 1}}{\overline{A}\{i,j\}[n]} &= \mathlarger{\mathlarger{\mathlarger{\{}}}\overline{A'}\mid{}\overline{A'}\{x\}[n] \wedge{x\in[i,j)\neq\emptyset}\mathlarger{\mathlarger{\mathlarger{\}}}}
+\end{align}
+\p From (14) and (15) we can derive the equivalences between annotated packs and parameter packs as we currently know them, including that of the size of the empty pack in annotated form.
+\begin{align}
+\overline{A}&\equiv\overline{A}\{\}\equiv\overline{A}\{\}[]\equiv\overline{A}\{\}[1]\equiv\overline{A}\{|\overline{A}|\}[]\equiv\overline{A}\{|\overline{A}|\}[1]\\
+\overline{A}&\equiv\overline{A}\{0,|\overline{A}|\}\equiv\overline{A}\{0,|\overline{A}|\}[]\equiv\overline{A}\{0,|\overline{A}|\}[1]
+\end{align}
+\p As for the empty annotated pack, since we are to use the empty set symbol $\emptyset$ for defining where SFINAE is to play a role, the \textbf{sizeof...()} operation is important in defining it as zero-length.
+\begin{align}
+|\overline{A}\{0\}[1]|&= 0
+\end{align}
+\p In conclusion, any invalid constant expression used as an annotation factor invalidates the parameter list, invoking SFINAE and thus the $\emptyset$ symbol is used.
+\begin{align}
+\underset{j\in\mathbb{Z}_{\geq 0}}{\overline{A}\{j\}[0]}&\equiv\underset{\forall [i,j)\subset\mathbb{Z}_{\geq 0}\vee[i,j)=\emptyset}{\overline{A}\{i,j\}[0]}\equiv\underset{[x,y)=\emptyset\wedge{}n\in\mathbb{Z}_{\geq 0}}{\overline{A}\{\cancel{x},\cancel{y}\}[n]}\equiv\underset{n\in\mathbb{Z}_{\geq 0}}{\overline{A}\{0,0\}[n]}\equiv\emptyset
+\end{align}
+
 \section{Deployment scenarios}
 \subsection{Easier typelist implementation}
 \p Annotated and non-annotated packs, can be combined for the explicit purpose of declarating constructs useful for manipulating typelists \cite{Czarnecki2000,Alexandrescu2001,Abrahams2004}.
@@ -617,7 +659,7 @@ struct split_at<N,typevector<L...{N-1},R...{sizeof...(R)}>> { /* anchored ! */
 };
 \end{minted}
 
-\item\p Given that in the context of the proposal $\bm{\overline{T}\{0,|\overline{T}|\}[1] \equiv \overline{T}\{0,|\overline{T}|\}}$ while $\bm{\overline{T}\{0,|\overline{T}|\}[0] \equiv \emptyset{}}$ with the latter invoking SFINAE since it would resolve to an empty set (making the template parameter list invalid) and $\overline{T}\{0,|\overline{T}|\}\equiv{\overline{T}\{|\overline{T}|\}}\equiv{\overline{T}\{\}}$, we can exploit the pattern annotator for an interesting rewrite of at least one of the partial specializations defined before, e.g. of {\textit{at\_pos}}:
+\item\p Given that in the context of the proposal $\bm{\overline{T}\{0,|\overline{T}|\}[1] \equiv \overline{T}\{0,|\overline{T}|\}}$ while $\bm{\overline{T}\{0,|\overline{T}|\}[0] \equiv \emptyset{}}$ with the latter invoking SFINAE since it would resolve to an empty set (making the template parameter list invalid) and $\overline{T}\{0,|\overline{T}|\}\equiv{\overline{T}\{|\overline{T}|\}}\equiv{\overline{T}\{\}}$, we can exploit the pattern annotator in declaration and the \textit{individual accessor} within template definition body for an interesting rewrite of at least one of the partial specializations defined before, e.g. of {\textit{at\_pos}}:
 \begin{minted}{c++}
 template<std::size_t N, typename... T{}[N < sizeof...(T)]>
 struct at_pos<N,typevector<T...>>
@@ -741,12 +783,6 @@ struct classy<X...> {
     { printf("sizeof...(X) in [3,6)\n"); }
 };
 \end{minted}
-\section{Currently undebated sections and other lacunae}
-\p {\color{tone1}{There needs to be a section on the pattern annotator itself.
-The expansion semantics under annotation are distributed throughout the text and should be concentrated in a separate section and discussed explicitly.
-The introductory section needs some work after the newer additions.
-The pattern matching examples for template meta-programming constructs in currently valid C++ need to be given their own example set.
-Technical specification in a format compatible to the standard is currently missing.}}
 
 \section{Technical specification}
 \subsection{Grammar Additions}
