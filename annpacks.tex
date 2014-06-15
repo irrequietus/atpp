@@ -222,8 +222,9 @@ They aim for specifying whether the presence of a pack in a template parameter l
 Only constant expressions can be used within \textit{annotators}, including expressions using pack identifiers that have already been declared in the template parameter list of the template involved.
 These semantics arise from the typical uses of class and function templates where parameter packs are involved for \textit{pattern matching purposes}, examples of which are following.
 
-\subsection{Using patterns as input for pattern matching}
-\p In the following example, template parameter packs are declared and expanded class template partial specializations and function template overloads in a variety of ways fully compatible with the C++11/C++14 standard, for pattern matching purposes. Once compiled, the resulting binary prints a series of strings on the terminal that are dependent upon the C++ templates and other features are used as computational devices during instantiation phase.
+\subsection{Parameter lists and packs as input for pattern matching}
+\p In the following example, template parameter lists containing packs are declared and expanded in class template partial specializations and function template overloads in a variety of ways fully compatible with the C++11/C++14 standard, for pattern matching purposes.
+Once compiled, the resulting binary prints a series of strings on the terminal that are dependent upon the C++ templates and other features are used as computational devices during instantiation phase.
 
 \begin{minted}{c++}
 #include <cstdio>
@@ -284,7 +285,7 @@ int main() {
 \p Currently, pack semantics do not allow us to look further into their structure unless more code is written for such an occasion.
 They can be expanded only when present in a context where all of the parameters in the template parameter list they appear can be deduced and thus why they must appear last in a declarative template parameter list.
 This context dependency of parameter packs is due to their omnicomprehensive character of abstracting zero or more parameters without any size or pattern constraints.
-\subsection{Context dependency of pack declaration and expansion}
+\subsection{Pack ordering is a naive implicit matching constraint}
 
 \p In order to better illustrate the template parameter list context of current pack semantics, we begin with a very simple duo of variadic class templates in the following code segment:
 
@@ -299,13 +300,8 @@ struct some_template {
 };
 \end{minted}
 
-
-\p In the specializations that follow, the template parameter pack is not
-expanded within the same template parameter list where it was declared and
-is ordered as the last argument used (right bound of the template argument
-list of the class template partial specialization). This allows for the pack to be expanded
-within a context where the totality of parameters turned arguments can be deduced,
-therefore correct and specialized instantiation to occur:
+\p In the specializations that follow, the template parameter pack is not expanded within the same template parameter list where it was declared and is present as a terminal parameter abstraction.
+This allows for the pack to be expanded within a context where the totality of parameters turned arguments can be deduced.
 
 \begin{minted}{c++}
 template<typename... X>
@@ -321,13 +317,7 @@ struct some_template<wrapper<int,X...>,int> { /* rightmost X! */
 };
 \end{minted}
 
-\p The order of appearance in a given template parameter/argument list of a
-parameter pack respect to non-pack template parameters is the single most
-important constraint for allowing the deduction of all parameters involved
-and thus pack expansion. In the following example, due to the pack appearing
-before a non-pack parameter the compiler cannot deduce all the parameters
-involved when the pack is required to expand in the template argument
-list the following class template partial specialization:
+\p Unlike what happened in our previous example, due to the pack appearing before a non-pack parameter the compiler cannot deduce all the parameters involved when the pack is required to expand in the template argument list the following class template partial specialization:
 
 \begin{minted}{c++}
 template<typename... X>
@@ -343,68 +333,68 @@ struct some_template<X...,int> { /* cannot deduce parameters! */
 };
 \end{minted}
 
-\p This behaviour is consistent in both class template partial specializations
-and function template declarations even when \textit{multiple template parameter}
-pack declarations exist in a given template parameter/argument list. An example
-where these are deployed follows. Notice the ordering of the packs required to expand
-within each instantiation of class template I, allowing for all parameters
-to be deduced:
+\p This behaviour is consistent in both class template partial specializations and function template declarations even when \textit{multiple template parameter} pack declarations are used.
+Notice the ordering of multiple packs required to expand within each instantiation of class template I, allowing for all parameters to be deduced:
 
 \begin{minted}{c++}
-/*  Multiple pack expansion in a context where parameters can be deduced! */
+/* multiple parameter packs in class template partial specialization */
+template<typename... A, typename... B, template<typename...> class I>
+struct classy<I<A...>,I<B...>> {
+    static void deploy() {
+        printf("multiple parameter packs in partial specializations!\n");
+    }
+};
+/* multiple parameter packs in function templates */
 template<typename... A, typename... B, template<typename...> class I>
 void function(I<A...>,I<B...>)
-{ printf("multiple parameter packs in function templates are ok!\n"); }
+{ printf("multiple parameter packs in function templates!\n"); }
 \end{minted}
 
-\p As useful as template parameter packs are, their
-declaration and expansion semantics can only currently abstract an ordered sequence
-of parameters of "unconstrained" length in both scenarios. Parameter packs
-cannot expand
-within the same template parameter list where they are declared because of
-their unbound expansion compromising parameter deduction and partial
-ordering in both class and function templates. The same rule is
-valid for template argument lists. However,
-unsurprisingly, the following code
-works because the parameter pack is required to expand within class template
-scope, where the all parameters have already been deduced during
-instantiation and thus the argument list of the enclosed member function
-is valid.:
+\p Unsurprisingly, the following code works because the parameter pack is required to expand within class template scope, where the all parameters have already been deduced during instantiation and thus parameter and argument lists used may deploy packs at any position.
 
 \begin{minted}{c++}
 template<typename... X>
 struct working {
     typedef wrapper<X...,int> type;
     
-    static void function(X...,int) {
-        printf("surprised to see me?\n");
-    }
+    static void function(X...,int)
+    { printf("surprised to see me?\n"); }
 };
 \end{minted}
+\subsection{Pack size and patterns are implicitly used as explicit constraints}
+\p As a last reminder, partial ordering in function template overloads (and by analogy in class template partial specializations) ensures that for a specific patterned sequence the best match is selected, but deploying this as a feature requires a geometrically increasing number of function template overloads to be specified in a naive implementation or complex SFINAE constraints for where certain patterns can be clustered into a single overload.
+This is another reason why having syntax permitting pattern clustering into a single overload or partial specialization can significantly lower source code boilerplate and lessen SFINAE dependency.
+\begin{minted}{c++}
+template<typename A, typename B, typename C, typename D, typename... T>
+void function(A,B,C,D,T...) { printf("A,B,C,D,T...\n"); }
 
-\p In essence, template parameter pack ordering is constrained to be right-bound
-in parameter and argument lists due to its unconstrained expansion
-compromising the deducibility of all the parameters involved, a feature
-necessary for pattern matching to occur.
-By specifying certain constraints in pack declaration
-and/or expansion we would be forcing the creation of specific template parameter
-and argument lists in contexts where parameter deduction is unattainable. In
-the simplest case, expanding a parameter pack in the left bound of a parameter/argument
-list with such constraints
-would yield a finite amount of parameters ("fixed pack size") of the same type
-(non-type,type, template type) for which partial ordering rules would be
-safe to apply. In the more general case, also decide which of the types
-contained already present in the pack should expand when certain constraints are met,
-allowing again the selective nature of partial ordering to occur.
+template<typename A, typename B, typename C, typename D>
+void function(A,B,C,D) { printf("A,B,C,D\n"); }
 
-\subsection{Conventions followed during analysis}
+template<typename A, typename B>
+void function(A,A,B,B) { printf("A,A,B,B\n"); }
+
+template<typename A>
+void function(A,A,A,A) { printf("A,A,A,A\n"); }
+
+template<typename A, typename B>
+void function(A,B,A,B) { printf("A,B,A,B\n"); }
+
+template<typename... T>
+void function(T...) { printf("T...\n"); }
+\end{minted}
+
+\p While template parameter pack ordering is an \textit{implicit, terminal-bound constraint} in order for deducibility of all the parameters in a template parameter list to be guaranteed, multiple patterns using class template partial specializations and function template overloads provide \textit{explicit constraints} for pattern matching according to size and pattern criteria.
+Template parameter pack annotation is about offering \textit{a systematic way for clustering explicit size and pattern constraints within the template parameter list itself}.
+
+\section{Analyzing template parameter pack annotation}
 \p For the purposes of conceptualization, we are going to borrow and admittedly abuse some of the mathematical notation available for formulations to which we will mix $\mathlarger{\bm{\{\}[]}}$ as "annotator" symbols for template parameter packs.
 These two annotators will be providing unambiguous intent when translating to C++ code that is considered to be valid in the context of this proposal.
 A C++ template parameter pack $...T$ will be symbolized as a capital letter with an overline (i.e. $\overline{T}$), while the $\bm{sizeof...(T)}$ constant expression will be symbolized as $|\overline{T}|$.
 
 \p Unless otherwise specified, all other notation used in the following formulation refers to its pristine mathematical meaning.
 At the current stage of this incomplete draft, there may be unintentional discrepancies that have to be corrected and will be in a newer version of this draft.
-\subsubsection{Fundamentals of parameter pack annotation}
+\subsection{Fundamentals of parameter pack annotation}
 \begin{enumerate}
 \item\p When $\mathlarger{\bm{\{N\}}}$ or $\mathlarger{\bm{\{N,K\}}}$ or $\mathlarger{\bm{\{\}}}$ are used, they are referring to constant expressions $N$ and $K$ used in the context of the \textit{interval annotator}.
 The first case specifies that the given pack is actually a shorthand for a parameter sequence consisting of exactly $N$ parameters of the same kind (non-type,type-type,template-type).
@@ -425,7 +415,7 @@ Anchoring annotation may be omitted in expansion, but when deployed, the anchori
 This way of access cannot modify any parameter type present at a given position nor can it be used with non-annotated packs.
 \item\p Multiple anchoring annotated packs may be present at any order within a template parameter list because unlike their non-annotated and interval annotated counterparts, they are deterministically specified in a context where deducibility is guaranteed.
 \end{enumerate}
-\subsubsection{Why individual accessors are inevitable}
+\subsection{Why individual accessors are inevitable}
 \p One of the characteristics of the parameter pack is the inability to access individual parameters contained for a given index.
 While this character may be acceptable for parameter packs as they stand right now in the C++11/C++14 standards, proposing any kind of "fixed size packs" even as convenient shorthands rapidly introduces two additional problems.
 In order to analyze these, we will use $\bm{()}$ enclosed constant expressions for referring to isolated "fixed size packs" in order to separate the context of such proposals with the context of our current draft.
@@ -466,7 +456,7 @@ using fixed_atpos_t = typename fixed_atpos<N,Args_T...>::type;
 \end{minted}
 \end{enumerate}
 
-\subsubsection{Understanding annotation equivalence}
+\subsection{Understanding annotation equivalence}
 \p First, a parameter pack is an n-ordered sequence (n-tuple) of zero or more parameter types of the same kind (non-type, type-type, template-type).
 They can be viewed as product types and modelled using nested ordered pairs, in a way reminiscent of a left/right fold of a cons function over the n-tuple that they actually are.
 The following two equivalent formulations inductively define a template parameter pack of $t_{0},t_{1},t_{2},...t_{n-1}$ are known to be valid representational approaches.
