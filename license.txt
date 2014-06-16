@@ -1,0 +1,8 @@
+Copyright (C) 2014 George Makrydakis <irrequietus@gmail.com>
+
+All rights reserved, no suitability is promised whatsoever for any of the
+contents of this document draft whatsoever.
+
+Track at http://atpp.irrequietus.eu
+
+
