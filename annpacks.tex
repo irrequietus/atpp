@@ -143,12 +143,12 @@
 \fancyhead[LE,RO]{\ifthenelse{\value{page}=1}{{\begin{tabular}{r l}\
 {\color{tone1}docnum} &  {\color{tone0} ONGOING INCOMPLETE DRAFT} \\
 {\color{tone1}project} & Programming Language C++, EWG \\
-{\color{tone1}date} & \date{\today{} \currenttime{} EEST} \\
+{\color{tone1}date} & \date{\GitCommitDate} \\
 {\color{tone1}author} & George Makrydakis \\
 {\color{tone1}reply-to} & \texttt{\href{mailto:irrequietus@gmail.com}{irrequietus@gmail.com}} \\
 {\color{tone1}revision} & \texttt{\GitShortRev{}}\\
 \end{tabular}}}{\slshape Annotated C++ template parameter packs\\
-\bf{\color{tone1}{uncorrected draft revision:} {\color{magenta} \GitShortRev{} - \date{\today{} \currenttime{} EEST}}}}}
+\bf{\color{tone1}{uncorrected draft revision:} {\color{magenta} \GitShortRev{} - \GitCommitDate{}}}}}
     
 %%% setting the width of the header ruler
 \renewcommand{\headrulewidth}{0.2pt}
@@ -178,7 +178,7 @@
 \author{George Makrydakis\\
 \texttt{\href{mailto:irrequietus@gmail.com}{irrequietus@gmail.com}}\\\bf{{\
 \color{magenta}UNCORRECTED INCOMPLETE DRAFT
-\date{\bf{\today{} \currenttime{} EEST}}}}\\
+\date{\bf{\GitCommitDate}}}}\\
 \color{tone0}\texttt{\textbf{\GitLongRev}}}
 \maketitle
 
