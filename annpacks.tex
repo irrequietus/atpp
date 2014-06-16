@@ -146,7 +146,7 @@
 {\color{tone1}date} & \date{\GitCommitDate} \\
 {\color{tone1}author} & George Makrydakis \\
 {\color{tone1}reply-to} & \texttt{\href{mailto:irrequietus@gmail.com}{irrequietus@gmail.com}} \\
-{\color{tone1}revision} & \texttt{\GitShortRev{}}\\
+{\color{tone1}revision} & \texttt{\GitShortRev{}} - \href{http://atpp.irrequietus.eu}{http://atpp.irrequietus.eu}\\
 \end{tabular}}}{\slshape Annotated C++ template parameter packs\\
 \bf{\color{tone1}{uncorrected draft revision:} {\color{magenta} \GitShortRev{} - \GitCommitDate{}}}}}
     
@@ -655,7 +655,7 @@ struct split_at {
 template< std::size_t N
         , typename... L{0,(N < sizeof...(L) ? N : 0)}
         , typename... R >
-struct split_at<N,typevector<L...{N-1},R...>> { /* anchored ! */
+struct split_at<N,typevector<L...{N},R...>> { /* anchored ! */
     typedef typevector<L...> first_half; /* already anchored */
     typedef typevector<R...> secnd_half; /* already anchored */
 };
@@ -792,7 +792,8 @@ struct classy<X...> {
 \section{Acknowledgements}
 The author would like to thank Ville Voutilainen, current secretary of the C++ standard committee for strongly motivating me to write this initial draft.
 Fixed size parameter packs were discussed and presented on the C++ std-proposals mailing\cite{Bos2014} list, in a thread started by Maurice Bos.
-
+The initial draft release was revision {\color{magenta}{7d4fb49}}\cite{Mak2014b}. Gerhard Röthlin privately provided feedback for
+paragraph {\color{magenta}{7d4fb49/63}} pinpointing an obvious error in a constant expression (fixed).
 \addcontentsline{toc}{section}{References}
 \printbibliography
 \end{document}
