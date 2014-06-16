@@ -639,7 +639,7 @@ struct alter_at { typedef error_type type; };
 template< std::size_t N
         , typename X
         , typename Z
-        , typename... T{0,(N < sizeof...(T) ? sizeof...(T) : 0)} /* T{0,0} ! */
+        , typename... T{0,(N < sizeof...(T) ? N : 0)} /* T{0,0} ! */
         , typename... R >
 struct alter_at<N,X,typevector<T...{N-1},Z,R...>>
 { typedef typevector<T...{N-1},X,R...> type; };
@@ -653,9 +653,9 @@ struct split_at {
 };
 
 template< std::size_t N
-        , typename... L{0,(N < sizeof...(L) ? sizeof...(L) : 0)}
-        , typename... R{N,(N < sizeof...(R) ? sizeof...(R) : 0)} >
-struct split_at<N,typevector<L...{N-1},R...{sizeof...(R)}>> { /* anchored ! */
+        , typename... L{0,(N < sizeof...(L) ? N : 0)}
+        , typename... R >
+struct split_at<N,typevector<L...{N-1},R...>> { /* anchored ! */
     typedef typevector<L...> first_half; /* already anchored */
     typedef typevector<R...> secnd_half; /* already anchored */
 };
