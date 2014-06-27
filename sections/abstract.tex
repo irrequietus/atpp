@@ -1,0 +1,31 @@
+%%% 
+%%% Annotated C++ template parameter packs
+%%% 
+%%% Copyright (C) 2014, George Makrydakis irrequietus@gmail.com>
+%%%
+%%% This document is released under a Creative Commons 4.0 license, specifically
+%%% Attribution-NonCommercial-NoDerivatives 4.0 International. Details for the
+%%% aforementioned license at http://creativecommons.org/licenses/by-nc-nd/4.0/
+%%% This repository's "license.txt" contains the full text of said license.
+%%%
+%%% This document draft discusses the possibility of extending C++ template
+%%% parameter packs with optional syntax described as "annotation". The only
+%%% git repository for tracking real-time changes by the original author is
+%%% at https://github.com/irrequietus/atpp.
+%%%
+%%% Periodically, the author ships major/important revisions of the draft in
+%%% PDF format, using the project website at http://atpp.irrequietus.eu with
+%%% each PDF file having a specific sha1sum checksum.
+%%%
+%%% This section is part of said document.
+
+\p Parametric polymorphism in C++ is implemented through class and function templates whose parameter types refer to three different declarative parameter abstractions: template non-type, template type-type and template template-type parameters.
+Since C++11\cite{cpp11}, a fourth kind of template parameter abstraction has been introduced, the \textit{template parameter pack}.
+Such an abstraction is used for expressing an ordered sequence of zero or more parameters of one of those three parameter types.
+
+\p In their current specification, template parameter packs do not have any declarative features that are explicitly descriptive of their size and/or actual expansion intent.
+Resourceful combinations of parameter packs with constant expressions in class template partial specializations, function templates, SFINAE\cite{sfinae}, ADL\cite{Koenig96} and partial ordering are extensively deployed in several C++ template meta-programming techniques for code generation purposes \cite{Abrahams2004}.
+
+\p This proposal explores the effects of \textit{optionally annotating C++ template parameter packs} in a backwards compatible manner with information about size, repetition and patterned expansion during their use in template parameter lists.
+Such annotation can be detrimental in reducing the cost of using templates as computational constructs for code generation within a given translation unit.
+Code generation techniques using template meta-programming at any level would require less source code boilerplate, as well as having reduced dependency on type-unsafe C++ preprocessor meta-programming for repetitive constructs - where current template parameter list semantics offer no other viable alternative.

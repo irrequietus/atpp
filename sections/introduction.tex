@@ -1,0 +1,33 @@
+%%% 
+%%% Annotated C++ template parameter packs
+%%% 
+%%% Copyright (C) 2014, George Makrydakis irrequietus@gmail.com>
+%%%
+%%% This document is released under a Creative Commons 4.0 license, specifically
+%%% Attribution-NonCommercial-NoDerivatives 4.0 International. Details for the
+%%% aforementioned license at http://creativecommons.org/licenses/by-nc-nd/4.0/
+%%% This repository's "license.txt" contains the full text of said license.
+%%%
+%%% This document draft discusses the possibility of extending C++ template
+%%% parameter packs with optional syntax described as "annotation". The only
+%%% git repository for tracking real-time changes by the original author is
+%%% at https://github.com/irrequietus/atpp.
+%%%
+%%% Periodically, the author ships major/important revisions of the draft in
+%%% PDF format, using the project website at http://atpp.irrequietus.eu with
+%%% each PDF file having a specific sha1sum checksum.
+%%%
+%%% This section is part of said document.
+
+\p Template parameter packs can be viewed as product types, tuples with cohere but undecided size in both their declaration and expansion within a given template parameter list prior to instantiation.
+However, a valid template parameter list containing parameters and parameter packs in the declaration of a class or function template is itself a tuple of parameters and parameter packs.
+In C++ template meta-programming, recursive template instantiations using such abstractions can be shown to play the role of algebraic values, with class template partial specializations \cite{Munoz2008} being one way of inference of their internal structure.
+This and other techniques based on exploiting SFINAE\cite{sfinae}, ADL\cite{Koenig96}, partial ordering and function template overloading, are actually manipulating the effective template candidates set for instantiation within a resolution scope, using constant expressions and forcing specific type sequences within the candidates' template parameter lists.
+Such idioms are critical in giving C++ template meta-programming \textit{pattern matching} features typically belonging to functional programming languages.
+
+\p While parameter packs greatly enhance the functional nature of C++ template meta-programming \cite{Alexandrescu2012}, they are just an omnicomprehensive abstraction of an n-ordered sequence of zero or more parameters without the ability of specifying \textit{which constraints the included parameters and their patterns must satisfy}.
+Inferences on their internal structure (the parameters included in a parameter pack and eventual patterns) and therefore use of template meta-programming \textit{pattern matching}, is relying on the manipulation of several declarations of partial / explicit class template specializations and / or multiple function template overloads that must be written, leading to increased source code boilerplate. \textit{Template parameter pack annotation} is a potential solution to this problem.
+
+\p The section on \textit{motivation} briefly analyzes how \textit{pattern matching} is used at the template meta-programming level through short examples and the context-dependent deployment of parameter packs, including multiple parameter packs within template parameter lists in {\color{red}{\textbf\textit{valid}}} C++11 / C++14 code.
+It is followed by a section of a more rigorous exposition of what annotators are. Annotator semantics and their limit equivalence scenarios with syntactical shorthands for packs of predetermined size ("fixed size parameter packs" \cite{Bos2014}) as well as currently valid C++ parameter packs are also examined. The last section of this draft deals with the benefit of adopting \textit{optionally annotated C++ template parameter packs} as a feature for constructs like typelists \cite{Czarnecki2000,Alexandrescu2001} and "block" switches in comparison to more laborious but currently valid C++11 / C++14 implementations.
+Future revisions of this draft will display similar effects of the same \textit{pack annotation} semantics for non-type and template-type template parameters.

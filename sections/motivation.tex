@@ -1,0 +1,28 @@
+%%% 
+%%% Annotated C++ template parameter packs
+%%% 
+%%% Copyright (C) 2014, George Makrydakis irrequietus@gmail.com>
+%%%
+%%% This document is released under a Creative Commons 4.0 license, specifically
+%%% Attribution-NonCommercial-NoDerivatives 4.0 International. Details for the
+%%% aforementioned license at http://creativecommons.org/licenses/by-nc-nd/4.0/
+%%% This repository's "license.txt" contains the full text of said license.
+%%%
+%%% This document draft discusses the possibility of extending C++ template
+%%% parameter packs with optional syntax described as "annotation". The only
+%%% git repository for tracking real-time changes by the original author is
+%%% at https://github.com/irrequietus/atpp.
+%%%
+%%% Periodically, the author ships major/important revisions of the draft in
+%%% PDF format, using the project website at http://atpp.irrequietus.eu with
+%%% each PDF file having a specific sha1sum checksum.
+%%%
+%%% This section is part of said document.
+
+\p The explicit goal of \textit{template parameter pack annotation} is to offer an optional descriptive "field" to the current parameter pack declaration and expansion semantics, through which constraints on parameter sequences and patterns contained within a given parameter pack may be specified.
+Such a feature can offer deterministic control over the actual contents of a parameter pack within the template parameter list declaration through constant expressions, \textit{without requiring breaking changes to be introduced with past and ongoing C++ standards}.
+
+\p \textit{Template parameter pack annotation factors} are constant expressions enclosed within \textit{template parameter pack annotators} like $\mathlarger{\bm{\{\}}}$ and $\mathlarger{\bm{[]}}$ immediately following parameter pack declaration and under certain conditions in expansion.
+They aim for specifying whether the presence of a pack in a template parameter list represents a valid match for instantiation to occur when the size of the pack is specific or within a left-closed, right-open interval of values (i.e. $\mathlarger{\bm{\{\}}}$ \textit{annotator}), whether it is comprised of a repeated pattern of parameters or not (i.e. $\mathlarger{\bm{[]}}$ \textit{annotator}).
+Only constant expressions can be used within \textit{annotators}, including expressions using pack identifiers that have already been declared in the template parameter list of the template involved.
+These semantics arise from the typical uses of class and function templates where parameter packs are involved for \textit{pattern matching purposes}, examples of which are following.

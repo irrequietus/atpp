@@ -1,0 +1,58 @@
+%%% 
+%%% Annotated C++ template parameter packs
+%%% 
+%%% Copyright (C) 2014, George Makrydakis irrequietus@gmail.com>
+%%%
+%%% This document is released under a Creative Commons 4.0 license, specifically
+%%% Attribution-NonCommercial-NoDerivatives 4.0 International. Details for the
+%%% aforementioned license at http://creativecommons.org/licenses/by-nc-nd/4.0/
+%%% This repository's "license.txt" contains the full text of said license.
+%%%
+%%% This document draft discusses the possibility of extending C++ template
+%%% parameter packs with optional syntax described as "annotation". The only
+%%% git repository for tracking real-time changes by the original author is
+%%% at https://github.com/irrequietus/atpp.
+%%%
+%%% Periodically, the author ships major/important revisions of the draft in
+%%% PDF format, using the project website at http://atpp.irrequietus.eu with
+%%% each PDF file having a specific sha1sum checksum.
+%%%
+%%% This section is part of said document.
+
+\begin{enumerate}
+\item\p An annotated template parameter pack is an n-ordered sequence of zero or more template parameters of the same type (non-type, type-type, template-type) whose identifier is followed by the \textit{interval} and \textit{pattern} annotators.
+The \textit{interval annotator} must always precede the \textit{pattern annotator} while both follow the identifier used for the \textit{annotated template parameter pack}.
+The \textit{interval annotator} serves as an explicit size constraint, while the \textit{pattern annotator} serves as the explicit pattern constraint we discussed about before.
+
+\item\p In the context of the \textit{interval annotator}, when $\bm{\{N\}}$ or $\bm{\{N,K\}}$ are used, they refer to constant expressions $\bm{N}$ and $\bm{K}$ and are referred to as \textit{interval factors} of an \textit{interval annotation}.
+The first case specifies that a given pack is actually a shorthand for a parameter sequence consisting of exactly $\bm{N}$ parameters of the same kind (non-type,type-type,template-type), but not necessarily resolving to the same type during parameter to argument conversion.
+When two comma-separated constant expressions are used, the \textit{interval annotator} refers to a valid right-open interval of $\bm{[N,K)\in\mathbb{Z}_{\geq 1}}$ within which the size of a pack matching the expression should be in order for the match to be valid.
+When no constant expressions are used, $\bm{\overline{T}\{\}}$ is equivalent to $\bm{\overline{T}}$, $\bm{\{|\overline{T}|\}}$ and $\bm{\{0,|\overline{T}|\}}$ which abstract a parameter pack of zero or more parameters of the same kind (non-type,type-type,template-type), but not necessarily resolving to the same type during parameter to argument conversion.
+This is how \textit{interval annotation} resolves into parameter pack semantics as we know them in C++11 / C++14.
+
+\item\p When the \textit{interval} annotator is used with a single constant expression, it can be referred to as \textit{anchoring annotator} and the annotation itself referred to as \textit{anchoring annotation} regardless of whether a \textit{pattern annotator} follows or not.
+\textit{Anchoring annotation} is equivalent to having declared a template parameter list with a fixed number of parameters.
+
+\item\p In the context of the \textit{pattern annotator} $\bm{[]}$ or $\bm{[1]}$ or $\bm{[N]}$ are used for declaring an annotated parameter pack made out of either a single ($\bm{[]}$ or $\bm{[1]}$) or more ($\bm{[N]}$) repetitions of the same parameter pattern.
+Thus, in \textit{pattern annotation}, the size of the pack does not get altered by what was specified in its preceding \textit{interval annotation}.
+In order for such a pack to be considered in a resolution set as a viable candidate, its size during instantiation must be an exact multiple of the \textit{pattern annotation factor}, given that it must be comprised of an exact multiple of repetitions of a parameter sequence whose size \textbf{\color{red}{\textit{is}}} the \textit{pattern annotation factor}.
+
+\item\p Annotated parameter packs co-declared with regular parameter packs in the same template parameter list gain partial ordering precedence over the latter unless they constitute equivalent forms of regular packs themselves, in which case a match cannot be made because parameter deduction cannot be guaranteed.
+Multiple packs with \textit{anchoring annotation} may be present with any order in the declaration of a template parameter list.
+Unlike their non-annotated and interval annotated counterparts, they are deterministically specified in a context where deducibility is guaranteed.
+
+\item\p When \textit{anchoring annotation} is used in an expansion context it must immediately follow the unpacking ellipsis.
+Using an \textit{anchoring annotator} after the pack specifier without it being expressed as expanding, results to individually accessing a parameter with an order specified by the enclosed constant expression.
+The \textit{anchoring annotator} is called \textit{individual accessor} in this context.
+If such an expression is invalid, the code is ill-formed.
+
+\item\p When the \textit{pattern annotator} is used in an expansion context, it must follow the unpacking ellipsis or an eventual \textit{anchoring annotator}; it always resolves to expanding the preceding pack as many times as the \textit{pattern factor} dictates and is not indicative of any constraints upon an already declared parameter pack.
+
+\item\p \textit{Interval annotation} can only be used in the declaration of a template parameter list.
+A template instantiation or argument list involving parameter expansion of pack declared with \textit{interval annotation}, with an anchoring factor in expansion not within the interval specified by the \textit{interval annotation} used in its declaration results in its removal from the resolution set within the involved translation unit.
+Invalid intervals, negative annotation factors of any kind, zero-valued anchoring and / or pattern factors have the same removal effect.
+This is practically equivalent to SFINAE removal of annotated packs.
+
+\item\p The template parameter pack specifier can be used in constant expressions of any of its annotation factors.
+
+\end{enumerate}

@@ -1,0 +1,45 @@
+%%% 
+%%% Annotated C++ template parameter packs
+%%% 
+%%% Copyright (C) 2014, George Makrydakis irrequietus@gmail.com>
+%%%
+%%% This document is released under a Creative Commons 4.0 license, specifically
+%%% Attribution-NonCommercial-NoDerivatives 4.0 International. Details for the
+%%% aforementioned license at http://creativecommons.org/licenses/by-nc-nd/4.0/
+%%% This repository's "license.txt" contains the full text of said license.
+%%%
+%%% This document draft discusses the possibility of extending C++ template
+%%% parameter packs with optional syntax described as "annotation". The only
+%%% git repository for tracking real-time changes by the original author is
+%%% at https://github.com/irrequietus/atpp.
+%%%
+%%% Periodically, the author ships major/important revisions of the draft in
+%%% PDF format, using the project website at http://atpp.irrequietus.eu with
+%%% each PDF file having a specific sha1sum checksum.
+%%%
+%%% This section is part of said document.
+
+\p As a last reminder, partial ordering in function template overloads (and by analogy in class template partial specializations) ensures that for a specific patterned sequence the best match is selected, but deploying this as a feature requires a geometrically increasing number of function template overloads to be specified in a naive implementation or complex SFINAE constraints for where certain patterns can be clustered into a single overload.
+This is another reason why having syntax permitting pattern clustering into a single overload or partial specialization can significantly lower source code boilerplate and lessen SFINAE dependency.
+\begin{minted}{c++}
+template<typename A, typename B, typename C, typename D, typename... T>
+void function(A,B,C,D,T...) { printf("A,B,C,D,T...\n"); }
+
+template<typename A, typename B, typename C, typename D>
+void function(A,B,C,D) { printf("A,B,C,D\n"); }
+
+template<typename A, typename B>
+void function(A,A,B,B) { printf("A,A,B,B\n"); }
+
+template<typename A>
+void function(A,A,A,A) { printf("A,A,A,A\n"); }
+
+template<typename A, typename B>
+void function(A,B,A,B) { printf("A,B,A,B\n"); }
+
+template<typename... T>
+void function(T...) { printf("T...\n"); }
+\end{minted}
+
+\p While template parameter pack ordering is an \textit{implicit, terminal-bound constraint} in order for deducibility of all the parameters in a template parameter list to be guaranteed, multiple patterns using class template partial specializations and function template overloads provide \textit{explicit constraints} for pattern matching according to size and pattern criteria.
+Template parameter pack annotation is about offering \textit{a systematic way for clustering explicit size and pattern constraints within the template parameter list itself}.

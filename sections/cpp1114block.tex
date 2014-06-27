@@ -1,0 +1,121 @@
+%%% 
+%%% Annotated C++ template parameter packs
+%%% 
+%%% Copyright (C) 2014, George Makrydakis irrequietus@gmail.com>
+%%%
+%%% This document is released under a Creative Commons 4.0 license, specifically
+%%% Attribution-NonCommercial-NoDerivatives 4.0 International. Details for the
+%%% aforementioned license at http://creativecommons.org/licenses/by-nc-nd/4.0/
+%%% This repository's "license.txt" contains the full text of said license.
+%%%
+%%% This document draft discusses the possibility of extending C++ template
+%%% parameter packs with optional syntax described as "annotation". The only
+%%% git repository for tracking real-time changes by the original author is
+%%% at https://github.com/irrequietus/atpp.
+%%%
+%%% Periodically, the author ships major/important revisions of the draft in
+%%% PDF format, using the project website at http://atpp.irrequietus.eu with
+%%% each PDF file having a specific sha1sum checksum.
+%%%
+%%% This section is part of said document.
+
+\p Using function templates and lambdas, a peculiar kind of "switch" may be implemented in {\color{red}{\textbf\textit{valid}}} C++11 / C++14 as in the following code snippet.
+Specifically, lambdas and SFINAE are combined to provide a "block switch" effect within the body of the \textit{func\_templ} function template depending on the number of parameters present in the pack during instantiation.
+The \textit{no-op} calls are optimized away.
+\begin{minted}{c++}
+template<std::size_t N, typename... X, typename F>
+typename std::enable_if<(sizeof...(X) == N),void>::type sel(F&& f) { f(); }
+
+template<std::size_t N, typename... X>
+void sel(...) {} /* no-op */
+
+template<typename... T>
+typename std::enable_if<(sizeof...(T) >= 1) && (sizeof...(T) < 6),void>::type
+function(T... t) {
+    sel<1,T...>([&t...](){ printf("one\n"); });
+    sel<2,T...>([&t...](){ printf("two\n"); });
+    sel<3,T...>([&t...](){ printf("three\n"); });
+    sel<4,T...>([&t...](){ printf("four\n"); });
+    sel<5,T...>([&t...](){ printf("five\n"); });
+}
+\end{minted}
+
+\p We can implement the previous example more easily with interval annotation.
+An invalid anchored pack expansion for a pack identifier declared with interval annotation removes the template from the resolution candidates.
+Thus, it becomes easier to use such idioms even without the \textit{std::enable\_if} C++11/C++14 template when defining the \textit{func\_tmpl} function template and its assistive functions.
+
+\begin{minted}{c++}
+template<typename...X, typename F>
+void sel(F&& f) { f(); }
+
+void sel(...) {} /* no-op */
+
+template<typename... T{1,6}>
+void func_tmpl(T... t) {
+    sel<T...{1}>([&t...](){ printf("one\n"); });
+    sel<T...{2}>([&t...](){ printf("two\n"); });
+    sel<T...{3}>([&t...](){ printf("three\n"); });
+    sel<T...{4}>([&t...](){ printf("four\n"); });
+    sel<T...{5}>([&t...](){ printf("five\n"); });
+}
+\end{minted}
+
+
+\subsection{Enhancing class template partial specializations}
+\p In contrast to function templates, the ability of class templates to have partial specializations makes them more malleable to specifying patterned sequences of types upon which template meta-programming driven type pattern matching occurs.
+A naive implementation for specializing a class template definition according to the size of the parameter pack declared in the template parameter list would require as many partial specializations as the sizes of interest.
+
+\p The following is a non-naive {\color{red}{\textbf\textit{valid}}} C++11 / C++14 implementation where the partial specializations required for this kind of problem are delegated to a nested class template.
+The partial specializations of the nested template are subject to removal from the resolution set through \textit{std::enable\_if}.
+Unlike the approach we followed in function templates, partial specializations open the door for more complex type calculations for "block-switch" like problems.
+\begin{minted}{c++}
+template<typename... X>
+struct classy_impl {
+private:
+    struct void_{};
+    
+    template<bool B, typename Z> /* C++14 has this as std::enable_if_t */
+    using enabler = typename std::enable_if<B,Z>::type;
+    
+    template<typename, typename...> struct impl_{};
+    
+    template<typename... T>
+    struct impl_<enabler<(sizeof...(T) >= 0 && sizeof...(T) < 3), void_>, T...>
+    { static void deploy(){ printf("[0,3)\n"); } };
+    
+    template<typename... T>
+    struct impl_<enabler<(sizeof...(T) >= 3 && sizeof...(T) < 6), void_>, T...>
+    { static void deploy(){ printf("[3,6)\n"); } };
+    
+    template<typename... T>
+    struct impl_<enabler<(sizeof...(T) >= 6), void_>, T...>
+    { static void deploy(){ printf(">=6\n"); } };
+public:
+    typedef impl_<void_,X...> type;
+};
+
+template<typename... X>
+using classy = typename classy_impl<X...>::type;
+\end{minted}
+\p If we try to solve the same problem using \textit{interval annotation}, there is not even need for a nested template to exist in order to handle the necessary partial specializations.
+The inherent SFINAE character of annotation semantics allows for a very succint formulation of programmer intent directly into C++ code.
+Additionally, there is no need to provide for a long series of specializations even in naive implementations, making constructs depending on pattern matching through long sets of partial specializations easier to deal with.
+\begin{minted}{c++}
+template<typename...>
+struct classy {
+    static void deploy()
+    { printf("sizeof...(X) >=6\n"); }
+};
+
+template<typename... X{0,3}>
+struct classy<X...> {
+    static void deploy()
+    { printf("sizeof...(X) in [0,3)\n"); }
+};
+
+template<typename... X{3,6}>
+struct classy<X...> {
+    static void deploy()
+    { printf("sizeof...(X) in [3,6)\n"); }
+};
+\end{minted}

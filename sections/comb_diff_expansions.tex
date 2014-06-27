@@ -1,0 +1,36 @@
+%%% 
+%%% Annotated C++ template parameter packs
+%%% 
+%%% Copyright (C) 2014, George Makrydakis irrequietus@gmail.com>
+%%%
+%%% This document is released under a Creative Commons 4.0 license, specifically
+%%% Attribution-NonCommercial-NoDerivatives 4.0 International. Details for the
+%%% aforementioned license at http://creativecommons.org/licenses/by-nc-nd/4.0/
+%%% This repository's "license.txt" contains the full text of said license.
+%%%
+%%% This document draft discusses the possibility of extending C++ template
+%%% parameter packs with optional syntax described as "annotation". The only
+%%% git repository for tracking real-time changes by the original author is
+%%% at https://github.com/irrequietus/atpp.
+%%%
+%%% Periodically, the author ships major/important revisions of the draft in
+%%% PDF format, using the project website at http://atpp.irrequietus.eu with
+%%% each PDF file having a specific sha1sum checksum.
+%%%
+%%% This section is part of said document.
+
+\p An interesting consequence of \textit{full interval annotation} in function templates derives from the fact that although interval annotation refers to a set of instantiations for which said template is to provide a valid match, it is one instantiation at a time actually occuring that is constrained to be matched with said template.
+According to the annotation rules, an \textit{anchored expansion} whose enclosed constant expression does not fall within the specified expansion interval gets removed from the candidate match set.
+
+\p However, at instantiation time there is a specific, non-alterable length to which the expansion is to occur. Therefore multiple well-formed anchored expansions in function calls can be used in combination with a no-op (e.g. \textbf{void gun(...)\{\}}, notice the use of the ellipsis) to make the following function template definition provide the optimal locality of reference for a series of different expansion semantics depending on the length of the parameter list used.
+The following snippet is taken from a GoingNative 2012 talk\cite{Alexandrescu2012} by Andrei Alexandrescu, to which annotation is bolted on for illustrative purposes.
+\begin{minted}{c++}
+template<class...{4,7} Ts>        /* sizeof...(Ts)= 4, 5 or 6 during instantiation ! */
+void fun(Ts... vs) {              /* we do not specify an anchored expansion yet */
+    gun(A<Ts...{4}>::hun(vs)...); /* sizeof...(Ts) = 4, else no-op */
+    gun(A<Ts...{5}>::hun(vs...)); /* sizeof...(Ts) = 5, else no-op */
+    gun(A<Ts>::hun(vs)...{6});    /* sizeof...(Ts) = 6, else no-op */
+}
+\end{minted}
+\p While the same effect could be achieved through extensive use of SFINAE and/or tag dispatching, it would require a lot more boilerplate and direct intervention into the function signatures of some of the function templates involved (e.g. \textbf{gun}).
+Annotation has the advantage of leaving the constant expressions within annotators to either be explicitly specified or evaluated during instantiation based on even more complex constraints.

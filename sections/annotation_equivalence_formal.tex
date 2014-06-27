@@ -1,0 +1,136 @@
+%%% 
+%%% Annotated C++ template parameter packs
+%%% 
+%%% Copyright (C) 2014, George Makrydakis irrequietus@gmail.com>
+%%%
+%%% This document is released under a Creative Commons 4.0 license, specifically
+%%% Attribution-NonCommercial-NoDerivatives 4.0 International. Details for the
+%%% aforementioned license at http://creativecommons.org/licenses/by-nc-nd/4.0/
+%%% This repository's "license.txt" contains the full text of said license.
+%%%
+%%% This document draft discusses the possibility of extending C++ template
+%%% parameter packs with optional syntax described as "annotation". The only
+%%% git repository for tracking real-time changes by the original author is
+%%% at https://github.com/irrequietus/atpp.
+%%%
+%%% Periodically, the author ships major/important revisions of the draft in
+%%% PDF format, using the project website at http://atpp.irrequietus.eu with
+%%% each PDF file having a specific sha1sum checksum.
+%%%
+%%% This section is part of said document.
+
+\p {\color{tone1}Prior to reading this section, {\color{magenta}a fair warning}.
+The meaning of this section is conceptualization of the rules laid out before for annotated parameter packs.
+There is some abuse of familiar symbols which happens after overlined identifiers like $\overline{A}$ for the sake of illustrating the concepts involved.
+The semantics of $\{\}$ and $[]$ obviously refer to annotators when following an overline identifier since these are the ones we are going to be using when translating these concepts into proposed C++ syntax.}
+
+\p We already know that parameters pack are n-ordered sequences (n-tuples) of zero or more parameter types of the same kind (non-type, type-type, template-type), of not necessarily identical parameters.
+They can be viewed as product types and modelled using nested ordered pairs, in a way reminiscent of a left/right fold of a cons function over the n-tuple that they actually are.
+The following two equivalent formulations inductively define a template parameter pack of $t_{0},t_{1},t_{2},...t_{n-1}$ are known to be valid representational approaches.
+The most basic annotator equivalence is added to both.
+\begin{align}
+\overline{X}
+    &\equiv \overline{X}\{\}[] = \underbrace{( t_{0}
+                   , ( t_{1}
+                     , (t_{2}
+                     , ( \dots{}
+                      , ( t_{n-1},\emptyset)\dots))))}_{n=|\overline{X}|=sizeof...(X)}\\
+\overline{Y}
+    &\equiv \overline{Y}\{\}[] = \underbrace{((\dots{} (((\emptyset{},t_{0})
+                   ,  t_{1})
+                     , t_{2})
+                     ,  \dots{}
+                      ), t_{n-1})}_{n=|\overline{Y}|=sizeof...(Y)}
+\end{align}
+\p We will be using the $\overline{X}$ formulation from now on, with an \textit{annotator} next to parameter pack declaration containing the size of the pack enclosed in curly braces as $\bm{\{j\}}$, when the intention is to force the j-tuple of contained elements that the pack is into a finite and well defined equivalent of the non-variadic form of said pack, which would be preferentially matched over the variadic form should the two coexist.
+When either $\overline{T}\{sizeof...(T)\}$ or $\overline{T}\{|\overline{T}|\}$ are used, these are completely equivalent to declaring $\overline{T}\{\}$ and $\overline{T}$ and therefore the "size" annotation may be ommited.
+
+\p Another important operation can also be modelled after valid C++11/C++14 code like the following (\textit{wrapper} and \textit{error\_type} were defined previously) when it comes to the semantics of joining two parameter packs of the same kind:
+\begin{minted}{c++}
+/* NOTE: valid C++11,C++14 code */
+template<typename,typename>
+struct join_packs
+{ typedef error_type type; };
+
+template<typename... A0, typename... A1>
+struct join_packs<wrapper<A0...>,wrapper<A1...>>
+{ typedef wrapper<A0...,A1...> type; };
+\end{minted}
+This will be formulated through the following convention that can be generalized for an arbitrary amount of parameter packs, having any variation of size and ordered sequence of types abstracted in said packs:
+\begin{align}
+\langle\overline{A_{0}}\{j_{0}\}\rangle &= (\overline{A_{0}}\{j_{0}\},\emptyset{}) =\nonumber\\
+&=(a_{0_{0}},(a_{0_{1}},(a_{0_{2}},...(a_{0_{j_{0}-1}},\emptyset{})\dots{})))\\
+\langle\overline{A_{0}}\{j_{0}\},\overline{A_{1}}\{j_{1}\}\rangle &= (\overline{A_{0}}\{j_{0}\},(\overline{A_{1}}\{j_{1}\},\emptyset{}))=\nonumber\\
+&=(a_{0_{0}},(a_{0_{1}},(a_{0_{2}},...(a_{0_{j_{0}-1}},\overline{A_{1}}\{j_{1}\})\dots{})))\\
+&=(a_{0_{0}},(a_{0_{1}},(a_{0_{2}},...(a_{0_{j_{0}-1}},(a_{1_{0}},(a_{1_{1}},(a_{1_{2}},...(a_{1_{j_{1}-1}},\emptyset{})\dots{}))))\dots{})))\nonumber\\
+\langle\overline{A_{0}}\{j_{0}\},\overline{A_{1}}\{j_{1}\},\overline{A_{2}}\{j_{2}\}\rangle &= (\overline{A_{0}}\{j_{0}\},(\overline{A_{1}}\{j_{1}\},(\overline{A_{2}}\{j_{2}\},\emptyset{})))=\nonumber\\
+&=(a_{0_{0}},(a_{0_{1}},(a_{0_{2}},...(a_{0_{j_{0}-1}},(\overline{A_{1}}\{j_{1}\},(\overline{A_{2}}\{j_{2}\},\emptyset{})))\dots{})))
+\end{align}
+\p It is conceptually easy to inductively define the new m-tuple of different parameter packs forming a parameter pack itself using the "size" annotator.
+\begin{align}
+\underset{\forall m,j_{0},j_{1},j_{2},...,j_{m-1} \in \mathbb{Z}_{\geq 1}}{\overline{A}\{\Sigma_{i=0}^{m-1} j_{i}\}}
+&=\underbrace{\overbrace{\langle\overline{A_{0}}\{j_{0}\},\overline{A_{1}}\{j_{1}\},\overline{A_{2}}\{j_{2}\},\dots\overline{A_{m-1}}\{j_{m-1}\}\rangle}^{sizeof...(A)=\Sigma_{i=0}^{m-1} j_{i}}}_{\bm{m-tuple}\text{ of different parameter packs.}}\nonumber\\&\Rightarrow\nonumber\\
+\underset{\forall m,j_{0},j_{1},j_{2},...,j_{m-1} \in \mathbb{Z}_{\geq 1}}{\overline{A}\{\Sigma_{i=0}^{m-1} j_{i}\}}
+&= (\overline{A_{0}}\{j_{0}\},(\overline{A_{1}}\{j_{1}\},(\overline{A_{2}}\{j_{2}\},...,(\overline{A_{m-1}}\{j_{m-1}\},\emptyset{})...)))
+\end{align}
+\p If multiple copies of this new pack were used in sequence to create a new pack through repetition, the following would hold for the case of a 2-tuple repetition:
+\begin{align}
+\underset{\forall m,j_{0},j_{1},j_{2},...,j_{m-1} \in \mathbb{Z}_{\geq 1}}{\langle\overline{A}\{\Sigma_{i=0}^{m-1} j_{i}\},\overline{A}\{\Sigma_{i=0}^{m-1} j_{i}\}\rangle}
+&=\underbrace{\overbrace{\langle\overline{A_{0}}\{j_{0}\},\overline{A_{1}}\{j_{1}\},\overline{A_{2}}\{j_{2}\},\dots\overline{A_{m-1}}\{j_{m-1}\},\overline{A_{0}}\{j_{0}\},\overline{A_{1}}\{j_{1}\},\overline{A_{2}}\{j_{2}\},\dots\overline{A_{m-1}}\{j_{m-1}\}\rangle}^{2\times\Sigma_{i=0}^{m-1} j_{i}}}_{\bm{2\times{}m-tuple}\text{ of different parameter packs.}}\nonumber
+\end{align}
+\p Continuing this process by repeatedly expanding this new pack through multiple repeats of the original from which it started, we arrive at the general form for n repeats as is below by introducing a "pattern" annotator $[n]$ as a symbolic shorthand of the process.
+\begin{align}
+\underset{\forall n,m,j_{0},j_{1},j_{2},...,j_{m-1} \in \mathbb{Z}_{\geq 1}}{\overline{A}\{n\times\Sigma_{i=0}^{m-1} j_{i}\}[n]}
+&=\underbrace{\overbrace{\langle\overline{A_{0}}\{j_{0}\},\overline{A_{1}}\{j_{1}\},\overline{A_{2}}\{j_{2}\},\dots\overline{A_{m-1}}\{j_{m-1}\},\dots,\overline{A_{0}}\{j_{0}\},\overline{A_{1}}\{j_{1}\},\overline{A_{2}}\{j_{2}\},\dots\overline{A_{m-1}}\{j_{m-1}\}\rangle}^{sizeof...(A)=n\times\Sigma_{i=0}^{m-1} j_{i}}}_{\bm{n\times{}m-tuple}\text{ of different parameter packs.}}
+\end{align}
+\p After formulating (7) as the "annotated" form of a template parameter pack, there is an interesting and intuitive observation of whether there can be an equivalence between the "annotated" form and template parameter packs so that any template parameter pack can be rewritten into an annotated form of another parameter pack for which explicit specification on its size and eventually occurring repetitive patterns may be specified.
+\begin{align}
+\underset{\exists j\in\mathbb{Z}_{\geq 0}\wedge{}n\in\mathbb{Z}_{\geq 1}}{\overline{A'}\{j\}[n]} \equiv \overline{A}
+\end{align}
+\p There are just three cases where (8) has to be proven valid: the single parameter and empty parameter pack, the non-empty parameter pack and the pack constructed through pattern repetition.
+\begin{enumerate}
+\item\p A single parameter may be viewed as the expansion of an annotated pack with a single parameter, therefore for a given parameter $A$, when $j=n=1$, making $\overline{A}\{1\}[1]$ equivalent to $A$.
+For the empty parameter pack case, according to annotation semantics, we have $j=0,n=1$:
+\begin{align}
+\underset{j=n=1}{\overline{A}\{j\}[n]} &\equiv A \\
+\underset{j=0,n=1}{\overline{A}\{j\}[n]} &\equiv \underset{|A| = 0}{A}
+\end{align}
+\item\p A finite sequence of parameters of the same kind (non-type,type-type,template-type) $A_{0},A_{1},A_{1},...,A_{m-1}$ constituting an m-tuple themselves, can make use of the result of (9) and be rewritten in the form of an annotated pack as follows:
+\begin{align}
+\overline{A} = \overbrace{\langle{}A_{0},A_{1},A_{2},...,A_{m-1}\rangle{}}^{m \in \mathbb{Z}_{\geq 1}} &=\overbrace{\langle{}\overline{A_{0}}\{1\}[1],\overline{A_{1}}\{1\}[1],\overline{A_{2}}\{1\}[1],...,\overline{A_{m-1}}\{1\}[1]\rangle{}}^{m}=\nonumber\\
+&=\overline{A}\overbrace{\{1+1+...+1\}}^{m}[1] = \underset{j=m,n=1}{\overline{A}\{m\}[1]} =\nonumber\\
+&=\overline{A}\{j\}[n]
+\end{align}
+\item\p For cases where the \textit{pattern annotator} is to have values greater than 1, we are really declaring a parameter pack $\overline{A}$ that is constructed by multiple repetitions of another pack $\overline{A'}$:
+\begin{align}
+\overline{A} &= \langle{}\overbrace{\underbrace{A_{0},A_{1},A_{2},\dots,A_{m-1}}_{0}}^{m},\overbrace{\underbrace{A_{0},A_{1},A_{2},\dots,A_{m-1}}_{1}}^{m},\dots,\overbrace{\underbrace{A_{0},A_{1},A_{2},\dots,A_{m-1}}_{n-1}}^{m}\rangle{}=\nonumber\\
+&=\langle{}\underbrace{\overline{A'}\{m\}[1],\overline{A'}\{m\}[1],\dots,\overline{A'}\{m\}[1]}_{n=|\overline{A}|,\overline{A'}=\langle{}A_{0},A_{1},A_{2},\dots,A_{m-1}\rangle}\rangle{}=\nonumber\\
+&=\overline{A'}\{\underbrace{m+m+m+\dots+m}_{n}\}[n] = \overline{A'}\{\underset{j=n\times{m}}{n\times{m}}\}[n]=\nonumber\\
+&=\overline{A'}\{j\}[n]
+\end{align}
+\end{enumerate}
+\p Even when a new parameter pack is constructed by mixing packs that are completely unrelated regarding number of parameter packs contained, provided they are of the same kind (non-type,type-type,template-type), annotated form can be used to describe them.
+\begin{align}
+\overline{A}&=\underset{\overline{A_{0}} \neq\overline{A_{1}}\neq\overline{A_{2}}\neq\dots\neq\overline{A_{m-1}}}{\langle{}\overline{A_{0}},\overline{A_{1}},\overline{A_{2}},\dots,\overline{A_{m-1}}\rangle} =\nonumber\\&= \langle\overline{A'_{0}}\{j_{0}\}[n_{0}],\overline{A'_{1}}\{j_{1}\}[n_{1}],\overline{A'_{2}}\{j_{2}\}[n_{2}],\dots,\overline{A'_{m-1}}\{j_{m-1}\}[n_{m-1}]\rangle{}=\nonumber\\
+&=\underset{j=j_{0}+j_{1}+j_{2}+...+j_{m-1},n=1}{\overline{A'}\{j_{0}+j_{1}+j_{2}+...+j_{m-1}\}[1]}=\nonumber\\
+&=\overline{A'}\{j\}[n]
+\end{align}
+\p The generalization of \textit{anchoring annotation} as tentatively formulated before is the \textit{interval annotation}, which actually refers to a set of valid anchored packs whose rank is that of the annotation interval.
+Given the claims of the section in annotation semantics and the formulations involving equivalences so far, template parameter pack annotation in its entirety can be be trivially deduced into a tentative series of formulations as follows.
+\begin{align}
+\underset{\exists j\in\mathbb{Z}_{\geq 0}\wedge{}n\in\mathbb{Z}_{\geq 1}}{\overline{A}} &\equiv{\overline{A'}\{j\}[n]}\\
+\underset{\exists i\in\mathbb{Z}_{\geq 0}\wedge{}j,n\in\mathbb{Z}_{\geq 1}}{\overline{A}\{i,j\}[n]} &= \mathlarger{\mathlarger{\mathlarger{\{}}}\overline{A'}\mid{}\overline{A'}\{x\}[n] \wedge{x\in[i,j)\neq\emptyset}\mathlarger{\mathlarger{\mathlarger{\}}}}
+\end{align}
+\p From (14) and (15) we can derive the equivalences between annotated packs and parameter packs as we currently know them, including that of the size of the empty pack in annotated form.
+\begin{align}
+\overline{A}&\equiv\overline{A}\{\}\equiv\overline{A}\{\}[]\equiv\overline{A}\{\}[1]\equiv\overline{A}\{|\overline{A}|\}[]\equiv\overline{A}\{|\overline{A}|\}[1]\\
+\overline{A}&\equiv\overline{A}\{0,|\overline{A}|\}\equiv\overline{A}\{0,|\overline{A}|\}[]\equiv\overline{A}\{0,|\overline{A}|\}[1]
+\end{align}
+\p As for the empty annotated pack, since we are to use the empty set symbol $\emptyset$ for defining where SFINAE is to play a role, the \textbf{sizeof...()} operation is important in defining it as zero-length.
+\begin{align}
+|\overline{A}\{0\}[1]|&= 0
+\end{align}
+\p In conclusion, any invalid constant expression used as an annotation factor invalidates the parameter list, invoking SFINAE and thus the $\emptyset$ symbol is used.
+\begin{align}
+\underset{j\in\mathbb{Z}_{\geq 0}}{\overline{A}\{j\}[0]}&\equiv\underset{\forall [i,j)\subset\mathbb{Z}_{\geq 0}\vee[i,j)=\emptyset}{\overline{A}\{i,j\}[0]}\equiv\underset{[x,y)=\emptyset\wedge{}n\in\mathbb{Z}_{\geq 0}}{\overline{A}\{\cancel{x},\cancel{y}\}[n]}\equiv\underset{n\in\mathbb{Z}_{\geq 0}}{\overline{A}\{0,0\}[n]}\equiv\emptyset
+\end{align}

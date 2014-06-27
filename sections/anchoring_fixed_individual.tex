@@ -1,0 +1,70 @@
+%%% 
+%%% Annotated C++ template parameter packs
+%%% 
+%%% Copyright (C) 2014, George Makrydakis irrequietus@gmail.com>
+%%%
+%%% This document is released under a Creative Commons 4.0 license, specifically
+%%% Attribution-NonCommercial-NoDerivatives 4.0 International. Details for the
+%%% aforementioned license at http://creativecommons.org/licenses/by-nc-nd/4.0/
+%%% This repository's "license.txt" contains the full text of said license.
+%%%
+%%% This document draft discusses the possibility of extending C++ template
+%%% parameter packs with optional syntax described as "annotation". The only
+%%% git repository for tracking real-time changes by the original author is
+%%% at https://github.com/irrequietus/atpp.
+%%%
+%%% Periodically, the author ships major/important revisions of the draft in
+%%% PDF format, using the project website at http://atpp.irrequietus.eu with
+%%% each PDF file having a specific sha1sum checksum.
+%%%
+%%% This section is part of said document.
+
+\p One of the current characteristics of C++ parameter packs is the inability to access individual parameters contained for a given index without relying on source code boilerplate using recursive template instantiations.
+Proposing "fixed sized parameter packs" \cite{Bos2014} as convenient shorthand notation without individual access (\textit{despite it lays the ground for it!}) does not yield any substantial benefit over parameter pack semantics for the \textit{explicit size constraint} that was previously discussed in template mediated pattern matching or the use of explicitly specified parameter types in parameter lists, for a series of reasons.
+\begin{enumerate}
+\item \p Adopting such syntax for just the sake of fixed size parameter packs does not reduce code boilerplate requirements when a specific pattern of parameters must be specified in a class template partial specialization or a function template overload, despite any perceived benefits in non-type parameter expansion within initializer lists.
+\item \p If the constant expression used for specifying size cannot make use of the already declared pack specifier the "fixed size pack" is abstracted with, such packs are not able to do any inference on the internal structure of the parameter pack they are abstracting, increasing SFINAE cost in subsequent class template partial specializations and function template overloads.
+\item \p Lacking individual access means inability to specify declarations using parameters specified in such a pack without additional boilerplate, which puts them in a disadvantageous position respect to forms explicitly specifying parameter sequence and reducing them to just a shorthand during parameter pack declaration in a given template parameter list.
+\end{enumerate}
+\p In the following example, we are using $\bm{()}$ enclosed constant expressions for referring to isolated "fixed size parameter packs" in order to separate the context of such a proposal\cite{Bos2014} with the context of our current draft and annotator syntax.
+The lack of individual parameter accessors becomes immediately evident in such a context because it does not allow for C++ parametric polymorphism to work by making it impossible for individual parameters contained in such packs to be used in declarations within template definitions.
+This is a syntactical handicap over templates where parameter lists are explicitly specified in parameter sequence forms, which fixed size parameter packs aim to replace.
+\begin{minted}{c++}
+/* code in the context of just proposing "fixed sized parameter packs" */
+template<typename... Args_T(3)> /* = template<typename,typename,typename> */
+struct class_template
+{ /* must have template<typename,typename,typename> semantics, access ? */ };
+
+template<typename... Args_T(3)> /* = template<typename,typename,typename> */
+void function(Args_T... args)   /* "fixed size pack" expanding syntax */
+{ /* must have template<typename,typename,typename> semantics, access ? */ }
+\end{minted}
+\p Even if such packs were to be introduced lacking individual accessors, it would be trivial enough for programmers of any level of C++ expertise to write a simple class template providing the same effect, to the point of becoming a nuissance not having it in the standard as a library feature.
+\begin{minted}{c++}
+template<std::size_t N, typename... Args_T>
+struct fixed_atpos {
+    public:
+        struct access_error {};
+    private:
+        template<typename... Fixed_T(K), typename X, typename... Types_T>
+        static typename std::enable_if<(K < sizeof...(Args_T)),X>::type
+        impl(Fixed_T...,X,Types_T...); /* fixed (determined) pack = ok */
+        
+        static access_error impl(...);
+    public:
+        typedef decltype(impl(std::declval<Args_T>()...)) type;
+};
+\end{minted}
+\p Such code easily prompts for simplification just as was the case with \textit{std::enable\_if}\cite{JarviWL03} - like templates using template aliases in C++14 or the abbreviated form of \textit{for} loops, in a context where \textit{fixed\_atpos} is valid.
+\begin{minted}{c++}
+template<std::size_t N, typename... Args_T>
+using fixed_atpos_t = typename fixed_atpos<N,Args_T...>::type;
+\end{minted}
+
+\p In the context of this draft, \textit{anchoring annotation} in declarative and expansive context has the advantage of behaving like fixed size parameter packs \cite{Bos2014} without their disadvantages in either non-type, type-type and template-type parameter form.
+
+\p\textit{Anchoring annotation} is a limit case of template parameter pack annotation, which is more malleable to solving both \textit{explicit size} and \textit{patterned repetition} problems in pattern matching computational constructs often used in modern C++ code, without requiring introduction of backwards - breaking changes or additional boilerplate to compete with explicitly specified template parameter lists.
+The latter is also due to its use for individual access of parameters when a pack has been declared with \textit{anchoring annotation}.
+
+\p The final effect is to significantly reduce repetitive source code boilerplate through complex but type-unsafe preprocessor meta-programming approaches for resolution set manipulation, while lessening the need for SFINAE constructs outside the declaration of a template parameter list.
+This leads to concise, error-free and more readable code, some of which is presented in later sections.

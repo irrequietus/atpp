@@ -1,0 +1,85 @@
+%%% 
+%%% Annotated C++ template parameter packs
+%%% 
+%%% Copyright (C) 2014, George Makrydakis irrequietus@gmail.com>
+%%%
+%%% This document is released under a Creative Commons 4.0 license, specifically
+%%% Attribution-NonCommercial-NoDerivatives 4.0 International. Details for the
+%%% aforementioned license at http://creativecommons.org/licenses/by-nc-nd/4.0/
+%%% This repository's "license.txt" contains the full text of said license.
+%%%
+%%% This document draft discusses the possibility of extending C++ template
+%%% parameter packs with optional syntax described as "annotation". The only
+%%% git repository for tracking real-time changes by the original author is
+%%% at https://github.com/irrequietus/atpp.
+%%%
+%%% Periodically, the author ships major/important revisions of the draft in
+%%% PDF format, using the project website at http://atpp.irrequietus.eu with
+%%% each PDF file having a specific sha1sum checksum.
+%%%
+%%% This section is part of said document.
+
+\p Annotated and non-annotated packs, can be combined for the explicit purpose of declarating constructs useful for manipulating typelists \cite{Czarnecki2000,Alexandrescu2001,Abrahams2004}.
+Class template partial specializations deploying substitutive ordering and type accessors can be mixed with a series of constant expressions in the annotated packs used that yield interesting results.
+
+\p The following examples illustrate one possible implementation of the typelist concept using annotated packs, with the typevector class being named such due to type accessors yielding $O(1)$ access during compilation.
+
+\begin{enumerate}
+\item\p Initially, the \textit{typevector} class is defined, along with an {\textit{error\_type}} for convenience. Definitions for three different operations, namely {\textit{at\_pos}}, {\textit{alter\_at}} and {\textit{split\_at}} are made for individual type access at a given position, changing the type at a given position and splitting the typevector into two different ones at a given position. The default result is always the {\textit{error\_type}}.Take notice that partial specializations of the \textit{at\_pos}, \textit{alter\_at}, \textit{split\_at} templates having the annotation equivalent of a regular parameter pack, would cause ambiguity to ensue because of the equivalence between $...T\{0,sizeof...(T)\}$ and $...T$.
+
+\item\p We begin with the bare fundamentals of \textit{error\_type} and \textit{typevector}.
+\begin{minted}{c++}
+struct error_type {};
+/* the typevector is actually just a holder for a pack */
+template<typename... X> struct typevector {};
+\end{minted}
+\item\p The interval annotator is used for declaring an annotated parameter pack in the following partial specializations of {\textit{at\_pos}}, where the constant expression of the right bound will resolve to $T\{0,0\}$ when access beyond the bounds is attempted.
+This is not a valid interval, therefore this specialization will be removed from the viable candidates set due to SFINAE, with the unspecialized class template definition providing a better match. 
+\begin{minted}{c++}
+template<std::size_t N, typename>
+struct at_pos { typedef error_type type; };
+
+template< std::size_t N
+        , typename... T{0,(N < sizeof...(T) ? sizeof...(T) : 0)}>
+struct at_pos<N,typevector<T...>>
+{ typedef T{N} type; };
+\end{minted}
+
+\item\p The combination of annotated and non-annotated packs can also be used for quickly altering the type parameter present at a given position in the {\textit{typevector}}.
+Again, the interval annotation is deployed for placing invalid access through a constant expression evaluating to 0, forcing $T\{0,0\}$ when that is attempted.
+\begin{minted}{c++}
+template<std::size_t N, typename>
+struct alter_at { typedef error_type type; };
+
+template< std::size_t N
+        , typename X
+        , typename Z
+        , typename... T{0,(N < sizeof...(T) ? N : 0)} /* T{0,0} ! */
+        , typename... R >
+struct alter_at<N,X,typevector<T...{N-1},Z,R...>>
+{ typedef typevector<T...{N-1},X,R...> type; };
+\end{minted}
+\item\p Splitting a {\textit{typevector}} into two halves at a given position is reduced to a problem of specifying the interval bounds correctly, with two constant expressions providing the same kind of $T\{0,0\}$ mediated SFINAE safety.
+\begin{minted}{c++}
+template<std::size_t N, typename>
+struct split_at {
+    typedef error_type first_half;
+    typedef error_type secnd_half;
+};
+
+template< std::size_t N
+        , typename... L{0,(N < sizeof...(L) ? N : 0)}
+        , typename... R >
+struct split_at<N,typevector<L...{N},R...>> { /* anchored ! */
+    typedef typevector<L...> first_half; /* already anchored */
+    typedef typevector<R...> secnd_half; /* already anchored */
+};
+\end{minted}
+
+\item\p Given that in the context of the proposal $\bm{\overline{T}\{0,|\overline{T}|\}[1] \equiv \overline{T}\{0,|\overline{T}|\}}$ while $\bm{\overline{T}\{0,|\overline{T}|\}[0] \equiv \emptyset{}}$ with the latter invoking SFINAE since it would resolve to an empty set (making the template parameter list invalid) and $\overline{T}\{0,|\overline{T}|\}\equiv{\overline{T}\{|\overline{T}|\}}\equiv{\overline{T}\{\}}$, we can exploit the pattern annotator in declaration and the \textit{individual accessor} within template definition body for an interesting rewrite of at least one of the partial specializations defined before, e.g. of {\textit{at\_pos}}:
+\begin{minted}{c++}
+template<std::size_t N, typename... T{}[N < sizeof...(T)]>
+struct at_pos<N,typevector<T...>>
+{ typedef T{N} type; };
+\end{minted}
+\end{enumerate}

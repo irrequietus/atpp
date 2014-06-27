@@ -1,0 +1,95 @@
+%%% 
+%%% Annotated C++ template parameter packs
+%%% 
+%%% Copyright (C) 2014, George Makrydakis irrequietus@gmail.com>
+%%%
+%%% This document is released under a Creative Commons 4.0 license, specifically
+%%% Attribution-NonCommercial-NoDerivatives 4.0 International. Details for the
+%%% aforementioned license at http://creativecommons.org/licenses/by-nc-nd/4.0/
+%%% This repository's "license.txt" contains the full text of said license.
+%%%
+%%% This document draft discusses the possibility of extending C++ template
+%%% parameter packs with optional syntax described as "annotation". The only
+%%% git repository for tracking real-time changes by the original author is
+%%% at https://github.com/irrequietus/atpp.
+%%%
+%%% Periodically, the author ships major/important revisions of the draft in
+%%% PDF format, using the project website at http://atpp.irrequietus.eu with
+%%% each PDF file having a specific sha1sum checksum.
+%%%
+%%% This section is part of said document.
+
+\p In order to better illustrate the template parameter list context of current pack semantics, we begin with a very simple duo of variadic class templates in the following code segment:
+
+\begin{minted}{c++}
+template<typename...>
+struct wrapper {};
+
+template<typename... T>
+struct some_template {
+    static void hello()
+    { printf("hello world!\n"); }
+};
+\end{minted}
+
+\p In the specializations that follow, the template parameter pack is not expanded within the same template parameter list where it was declared and is present as a terminal parameter abstraction.
+This allows for the pack to be expanded within a context where the totality of parameters turned arguments can be deduced.
+
+\begin{minted}{c++}
+template<typename... X>
+struct some_template<wrapper<X...>,int> { /* X is alone! */
+    static void hello()
+    { printf("hello world from wrapper!\n"); }
+};
+
+template<typename... X>
+struct some_template<wrapper<int,X...>,int> { /* rightmost X! */
+    static void hello()
+    { printf("the first type in the wrapper is an int...\n"); }
+};
+\end{minted}
+
+\p Unlike what happened in our previous example, due to the pack appearing before a non-pack parameter the compiler cannot deduce all the parameters involved when the pack is required to expand in the template argument list the following class template partial specialization:
+
+\begin{minted}{c++}
+template<typename... X>
+struct some_template<wrapper<X...,int>,int> { /* cannot deduce parameters! */
+    static void hello()
+    { printf("this code is wrong!"); }
+};
+
+template<typename...X>
+struct some_template<X...,int> { /* cannot deduce parameters! */
+    static void hello()
+    { printf("this code is also wrong!\n"); }
+};
+\end{minted}
+
+\p This behaviour is consistent in both class template partial specializations and function template declarations even when \textit{multiple template parameter} pack declarations are used.
+Notice the ordering of multiple packs required to expand within each instantiation of class template I, allowing for all parameters to be deduced:
+
+\begin{minted}{c++}
+/* multiple parameter packs in class template partial specialization */
+template<typename... A, typename... B, template<typename...> class I>
+struct classy<I<A...>,I<B...>> {
+    static void deploy() {
+        printf("multiple parameter packs in partial specializations!\n");
+    }
+};
+/* multiple parameter packs in function templates */
+template<typename... A, typename... B, template<typename...> class I>
+void function(I<A...>,I<B...>)
+{ printf("multiple parameter packs in function templates!\n"); }
+\end{minted}
+
+\p Unsurprisingly, the following code works because the parameter pack is required to expand within class template scope, where the all parameters have already been deduced during instantiation and thus parameter and argument lists used may deploy packs at any position.
+
+\begin{minted}{c++}
+template<typename... X>
+struct working {
+    typedef wrapper<X...,int> type;
+    
+    static void function(X...,int)
+    { printf("surprised to see me?\n"); }
+};
+\end{minted}

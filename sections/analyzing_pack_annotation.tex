@@ -1,0 +1,26 @@
+%%% 
+%%% Annotated C++ template parameter packs
+%%% 
+%%% Copyright (C) 2014, George Makrydakis irrequietus@gmail.com>
+%%%
+%%% This document is released under a Creative Commons 4.0 license, specifically
+%%% Attribution-NonCommercial-NoDerivatives 4.0 International. Details for the
+%%% aforementioned license at http://creativecommons.org/licenses/by-nc-nd/4.0/
+%%% This repository's "license.txt" contains the full text of said license.
+%%%
+%%% This document draft discusses the possibility of extending C++ template
+%%% parameter packs with optional syntax described as "annotation". The only
+%%% git repository for tracking real-time changes by the original author is
+%%% at https://github.com/irrequietus/atpp.
+%%%
+%%% Periodically, the author ships major/important revisions of the draft in
+%%% PDF format, using the project website at http://atpp.irrequietus.eu with
+%%% each PDF file having a specific sha1sum checksum.
+%%%
+%%% This section is part of said document.
+
+\p For the purposes of conceptualization, we are going to borrow and admittedly abuse some of the mathematical notation available for formulations, mixed with the annotators $\mathlarger{\bm{\{\}[]}}$ that we are going to use when we translate this into the proposed C++ syntax for annotation.
+A C++ template parameter pack $...T$ will be symbolized as a capital letter with an overline (i.e. $\overline{T}$), while the $\bm{sizeof...(T)}$ constant expression will be symbolized as $|\overline{T}|$.
+
+\p Unless otherwise specified, all other notation used in the following formulation refers to its pristine mathematical meaning.
+At the current stage of this incomplete draft, there may be unintentional discrepancies that have to be corrected and will be in a newer version of this draft.
