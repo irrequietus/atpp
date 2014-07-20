@@ -19,15 +19,62 @@
 %%%
 %%% This section is part of said document.
 
-\p Template parameter packs can be viewed as product types, tuples with cohere but undecided size in both their declaration and expansion within a given template parameter list prior to instantiation.
-However, a valid template parameter list containing parameters and parameter packs in the declaration of a class or function template is itself a tuple of parameters and parameter packs.
-In C++ template meta-programming, recursive template instantiations using such abstractions can be shown to play the role of algebraic values, with class template partial specializations \cite{Munoz2008} being one way of inference of their internal structure.
-This and other techniques based on exploiting SFINAE\cite{sfinae}, ADL\cite{Koenig96}, partial ordering and function template overloading, are actually manipulating the effective template candidates set for instantiation within a resolution scope, using constant expressions and forcing specific type sequences within the candidates' template parameter lists.
-Such idioms are critical in giving C++ template meta-programming \textit{pattern matching} features typically belonging to functional programming languages.
+\subsection{How to read this document}
 
-\p While parameter packs greatly enhance the functional nature of C++ template meta-programming \cite{Alexandrescu2012}, they are just an omnicomprehensive abstraction of an n-ordered sequence of zero or more parameters without the ability of specifying \textit{which constraints the included parameters and their patterns must satisfy}.
-Inferences on their internal structure (the parameters included in a parameter pack and eventual patterns) and therefore use of template meta-programming \textit{pattern matching}, is relying on the manipulation of several declarations of partial / explicit class template specializations and / or multiple function template overloads that must be written, leading to increased source code boilerplate. \textit{Template parameter pack annotation} is a potential solution to this problem.
+\p If you are interested in quick examples of the syntax itself, focus on introduction, parameter pack annotation semantics and deployment scenarios.
+The sections alluding to "formal" proofs of the equivalent forms will be completed and moved to an addendum to the paper in its final N-numbered form.
+Ternary annotation refers to the generative aspects of annotation itself and is being currently prepared.
+The interplay between concepts \cite{Stroustrup2012,Sutton2013} and how pack annotation works \textit{with} them, enhancing \textit{them} without \textit{them} being able to supplant annotation (and any other kind of pack processing proposal related to EWG issue 30 \cite{Abrahams2012} like this one) is being formally processed (boring to read) and will be merged later on.
+The goal is to produce a very compact proposal document with an addendum related to details beyond code sample exposition.
+Paragraphs on addressing several concerns are still being added so watch the official git repository of the document and its issue tracker.
 
-\p The section on \textit{motivation} briefly analyzes how \textit{pattern matching} is used at the template meta-programming level through short examples and the context-dependent deployment of parameter packs, including multiple parameter packs within template parameter lists in {\color{red}{\textbf\textit{valid}}} C++11 / C++14 code.
-It is followed by a section of a more rigorous exposition of what annotators are. Annotator semantics and their limit equivalence scenarios with syntactical shorthands for packs of predetermined size ("fixed size parameter packs" \cite{Bos2014}) as well as currently valid C++ parameter packs are also examined. The last section of this draft deals with the benefit of adopting \textit{optionally annotated C++ template parameter packs} as a feature for constructs like typelists \cite{Czarnecki2000,Alexandrescu2001} and "block" switches in comparison to more laborious but currently valid C++11 / C++14 implementations.
-Future revisions of this draft will display similar effects of the same \textit{pack annotation} semantics for non-type and template-type template parameters.
+\subsection{Making parameter packs first class citizens in a template parameter list}
+
+\p Template parameter packs are product types, n-tuples of parameters of the same parameter type.
+In all levels of C++ template meta-programming, recursive template instantiations can be shown to play the role of algebraic values, used in cohort with class template partial specializations, function template overloads, SFINAE, ADL, partial ordering, as template parameter list processing and type-safe code generation tools \cite{Munoz2008,JarviWL03,Abrahams2004,Alexandrescu2001}.
+Such techniques are critical to fully exploiting C++ template meta-programming \textit{pattern matching} characteristics typically belonging to functional programming languages.
+
+\p While parameter packs greatly enhance the functional nature of C++ template meta-programming \cite{Alexandrescu2012}, the lack of language level pack processing sfeatures related to both access and generation has been partially been addressed through template meta-programming library facilities out of which variadics had originally emerged as a proposal \cite{Czarnecki2000,Alexandrescu2001,Abrahams2004,Gregor2006,Gregor2008,Gregor2008a}.
+When more complex constructs depending on parameter pack processing features became the norm in C++ libraries of widespread use, the limitations of the library approach became quite evident.
+
+\p Of note, recourse to classical techniques in such libraries, as the aforementioned recursive template instantiations, proved onerous enough to stem C++ EWG issues and proposals at a language feature level \cite{Abrahams2012,Middleditch2013,Wakely2013,Wakely2013a} that aim to \textit{greatly enhance template meta-programming itself}; such bibliography offers ample motivation and examples of interest to the reader, making library-level reccomendations for such features confusing and fears of increasing complexity of template meta-programming objectively unfounded.
+Importantly, they may even ease the implementation of purely functional programming constructs for template meta-programming like \textit{monads} \cite{Porkolab2010,Sinkovich2013} for purposes including better error reporting \cite{Sinkovich2013}.
+
+\p The \textit{actual} effect of adopting pack processing features at a language level is to turn constructs like \textit{typelists} \cite{Czarnecki2000,Alexandrescu2001,Abrahams2004} into first class citizens within template parameter lists.
+In combination with \textit{concepts} \cite{Stroustrup2012,Sutton2013} (constraints that do not overlap with the actual intention of annotation), such features can almost totally eliminate the need for laborious source code boilerplate in vertical and horizontal dimensions, where even preprocessor meta-programming seems at times inevitable.
+
+\subsection{Getting quickly acquainted with the syntax}
+\p \textit{Annotators} are tied up to the \textit{triple-dot} operator and pack identifier as a logical extension of the pack concept; there is where dealing with C++ abstract syntax tree building has finished addressing code strictly specific to a parameter pack.
+The curly braces (i.e. \textit{interval} annotator) have been selected because \textit{they are not used currently in the context of a template parameter list} following pack identifiers or \textit{triple-dot} operators and are therefore guaranteed to provide unambiguous parsing.
+These can be followed by an additional annotator in square brackets (i.e. \textit{pattern annotator}) that can only be present if the \textit{interval} annotator follows a pack identifier or a \textit{triple-dot} operator.
+Given that all standard C++ compilers issue errors when parameter packs are not expanded through the \textit{triple-dot} operator, the presence of a single integral constant expression within the \textit{interval} annotator (i.e. $\{\}$) is used as index based access for the elements of a parameter pack, \textit{omitting the triple-dot} and thus providing an unambiguous parse for the pack at minimal cost for an implementor.
+
+\p A series of initial examples are offered in order to familiarize the reader with the syntax; its coherence and unambiguity are analyzed later on.
+The full syntax is used in each occasion and the reader should be aware that these represent \text{optional syntactic extensions} to pack notation but in order for annotation to be valid, the annotators have to be present in a certain order.
+The reason for this is that there are equivalent forms with non-annotated (C++11/14) parameter packs.
+Any combination of integral constant expressions that is considered invalid within annotation context, removes the related template from the matching candidates.
+
+\begin{minted}{c++}
+// N,M,K are integral constant expressions
+template<typename... T{N,M}[K]> struct class_template
+{ /*... */ };
+
+// X is an integral constant expression such as N <= X < M
+template<typename... T> struct class_template<T...{X}>
+{ typedef T{Z} type; /*... */ };
+
+// [I,J) is any valid subinterval of [N,M), I <= L < J
+template<typename... T> struct class_template<T...{I,J}>
+{ typedef T{L} type; /*... */ };
+
+// A =< K < B
+template<typename... P{A,B}[C]> void function_template(P...)
+{ typedef P{K} type; /*... */ };
+
+// S <= U < D
+template<typename... W{S,D}[F]> void function_template(W...)
+{ W{U} varname; /*... */ };
+
+\end{minted}
+
+\p Future revisions of this draft will display similar effects of the same \textit{pack annotation} semantics for non-type and template-type template parameters and their interaction with concepts \cite{Stroustrup2012,Sutton2013}.

@@ -201,32 +201,25 @@
 
 \input{sections/disclaimer.tex}
 
+\newpage
+
 \section{Introduction}
     \input{sections/introduction.tex}
-
-\section{Motivation}
-    \input{sections/motivation.tex}
-
-    \subsection{Parameter lists and packs as input for pattern matching}
-        \input{sections/pack_lists_input.tex}
-
-    \subsection{Pack ordering is a naive implicit matching constraint}
-        \input{sections/pack_ordering_constraint.tex}
-
-    \subsection{Pack size and patterns are implicitly used as explicit constraints}
-        \input{sections/pack_size_constraint.tex}
 
 \section{Analyzing template parameter pack annotation}
     \input{sections/analyzing_pack_annotation.tex}
 
     \subsection{Parameter pack annotation semantics}
         \input{sections/pack_annotation_semantics.tex}
-
-    \subsection{Anchoring annotation, fixed size parameter packs and individual accessors}
-        \input{sections/anchoring_fixed_individual.tex}
+        
+    \subsection{Ternary Annotation and Generative Constructs}
+        \input{sections/ternary_annotation_generative.tex}
 
     \subsection{Understanding annotation equivalence through a tentative formulation}
         \input{sections/annotation_equivalence_formal.tex}
+    
+    \subsection{Annotation and Concepts}
+        \input{sections/annotation_and_concepts.tex}
 
 \section{Deployment scenarios}
     \subsection{Easier typelist implementation}
@@ -238,15 +231,16 @@
     \subsection{The C++11/C++14 block switch effect, better}
         \input{sections/cpp1114block.tex}
 
-\section{Technical specification}
-    \subsection{Grammar Additions}
-        \input{sections/grammar.tex}
+\section{Additional Considerations}
+
+\subsection{Anchoring annotation, fixed size parameter packs and individual accessors}
+        \input{sections/anchoring_fixed_individual.tex}
 
 \section{Acknowledgements}
     \input{sections/acknowledgements.tex}
 
-
-%%% Remember to add references!    
+%%% Remember to add references!
+%%% And of course, directly address all the kinds of comments from Rapperswil...
 \addcontentsline{toc}{section}{References}
 \printbibliography
 

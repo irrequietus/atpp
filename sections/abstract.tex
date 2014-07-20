@@ -19,13 +19,13 @@
 %%%
 %%% This section is part of said document.
 
-\p Parametric polymorphism in C++ is implemented through class and function templates whose parameter types refer to three different declarative parameter abstractions: template non-type, template type-type and template template-type parameters.
-Since C++11\cite{cpp11}, a fourth kind of template parameter abstraction has been introduced, the \textit{template parameter pack}.
-Such an abstraction is used for expressing an ordered sequence of zero or more parameters of one of those three parameter types.
+\p Parametric polymorphism in C++ is implemented through class and function templates whose template parameter lists are comprised of three different parameter types: template non-type, template type-type and template template-type parameters.
+Template parameter \textit{packs} in C++11 \cite{cpp11} allow the declaration and use of n-ordered sequences of pararameters of the same parameter type within a template parameter list.
+However, this is done without being able to directly specify pack size within a given range and/or pattern constraints, without having indexed or ranged access and with no ability to generate specific patterns through expansion through language features.
 
-\p In their current specification, template parameter packs do not have any declarative features that are explicitly descriptive of their size and/or actual expansion intent.
-Resourceful combinations of parameter packs with constant expressions in class template partial specializations, function templates, SFINAE\cite{sfinae}, ADL\cite{Koenig96} and partial ordering are extensively deployed in several C++ template meta-programming techniques for code generation purposes \cite{Abrahams2004}.
+\p Library alternatives for pack processing are comprised of complex source code boilerplate in vertical (e.g. several function template overloads and class template partial specializations) and horizontal dimensions (e.g. overly complex SFINAE \cite{sfinae,JarviWL03}, extremely deep recursive instantiations), where even the type-unsafe assistance of preprocessor meta-programming may be required.
+Reducing the need for such techniques by introducing language level parameter pack manipulation would not only make template meta-programming more approachable to novices, but also less cumbersome for experts.
 
-\p This proposal explores the effects of \textit{optionally annotating C++ template parameter packs} in a backwards compatible manner with information about size, repetition and patterned expansion during their use in template parameter lists.
-Such annotation can be detrimental in reducing the cost of using templates as computational constructs for code generation within a given translation unit.
-Code generation techniques using template meta-programming at any level would require less source code boilerplate, as well as having reduced dependency on type-unsafe C++ preprocessor meta-programming for repetitive constructs - where current template parameter list semantics offer no other viable alternative.
+\p \textit{Annotated C++ template parameter packs} are parameter packs accompanied by additional but optional, terse syntax in declaration (i.e. $\bm{...T\{N,M\}[K]}$) and/or expansion (i.e. $\bm{T...\{I\}[J]}$) and direct access of parameter pack members (i.e. $\bm{T\{Z\}}$) using integral constant expressions (i.e. $\bm{N,M,K,I,J,Z}$).
+Along with its equivalent forms, annotation provides an unambiguous, backwards compatible solution for expressing complex pack processing within template parameter lists themselves, \textit{prior to any other constraints}.
+Annotation semantics can specify pack sizes of either determined size or within a given range, reflect on whether a pack is comprised of a specific repeated pattern, easily offer patterned generation in expansion as well as indexed and ranged access while making implementation of functional programming constructs easier in template meta-programs.
