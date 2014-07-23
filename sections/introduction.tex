@@ -43,7 +43,7 @@ Importantly, they may even ease the implementation of purely functional programm
 \p The \textit{actual} effect of adopting pack processing features at a language level is to turn constructs like \textit{typelists} \cite{Czarnecki2000,Alexandrescu2001,Abrahams2004} into first class citizens within template parameter lists.
 In combination with \textit{concepts} \cite{Stroustrup2012,Sutton2013} (constraints that do not overlap with the actual intention of annotation), such features can almost totally eliminate the need for laborious source code boilerplate in vertical and horizontal dimensions, where even preprocessor meta-programming seems at times inevitable.
 
-\subsection{Getting quickly acquainted with the syntax}
+\section{Getting quickly acquainted with the syntax}
 \p \textit{Annotators} are tied up to the \textit{triple-dot} operator and pack identifier as a logical extension of the pack concept; there is where dealing with C++ abstract syntax tree building has finished addressing code strictly specific to a parameter pack.
 The curly braces (i.e. \textit{interval} annotator) have been selected because \textit{they are not used currently in the context of a template parameter list} following pack identifiers or \textit{triple-dot} operators and are therefore guaranteed to provide unambiguous parsing.
 These can be followed by an additional annotator in square brackets (i.e. \textit{pattern annotator}) that can only be present if the \textit{interval} annotator follows a pack identifier or a \textit{triple-dot} operator.
@@ -78,3 +78,5 @@ template<typename... W{S,D}[F]> void function_template(W...)
 \end{minted}
 
 \p Future revisions of this draft will display similar effects of the same \textit{pack annotation} semantics for non-type and template-type template parameters and their interaction with concepts \cite{Stroustrup2012,Sutton2013}.
+
+\input{sections/syntaxtable.tex}
