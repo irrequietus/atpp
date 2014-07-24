@@ -18,10 +18,12 @@ When no expression is specified, $\bm{1}$ is implied and it may be omitted since
 In declaration, the pattern annotator requires the pack it is applied upon to be an exact multiple of an ordered sequence of types, the latter of size equal to the integral constant expression it encloses. In expansion, it repeats the annotated pack as many times as said expression.
 The \textit{pattern} annotator is a valid construct if and only if preceded by a valid \textit{interval} annotator.
 
-\item\p The \textit{access} annotator is a degenerate form of the \textit{interval} annotator that can follow a pack identifier in only in substitution of the \textit{triple-dot} operator, with a single and mandatory integral constant expression; the construct has the effect of individually accessing a parameter within a pack at an index equal to said integral constant expression.
+\item\p \textcolor{RoyalBlue}{This is getting revised for wording and 2 expressions may be allowed, see \textbf{R}}.
+The \textit{access} annotator is a degenerate form of the \textit{interval} annotator that can follow a pack identifier in only in substitution of the \textit{triple-dot} operator, with a single and mandatory integral constant expression; the construct has the effect of individually accessing a parameter within a pack at an index equal to said integral constant expression.
 \end{enumerate}
 
-\textcolor{RoyalBlue}{\textit{NB: This must be checked for typos and eventual omissions.}}
+\textcolor{RoyalBlue}{\textit{NB: This must be checked for typos and eventual omissions.
+It also shows why declaration is much easier than expansion, which is much more complicated with variadics involved.}}
 
 \begin{tabularx}{\textwidth}{l|c|X}
   \textbf{Syntactical Example} & \textbf{Use}  &\textbf{Significance} \\
@@ -38,14 +40,22 @@ $\bm{...T\{\textcolor{Magenta}{sizeof...(T)}\}[]}$ & D &  $...T$ \\
 $\bm{...T\{\textcolor{Magenta}{sizeof...(T)}\}}$ & D & $...T$ \\
 $\bm{...T}$ & D & $...T$ \\
 \end{tabularx}
-
-\textcolor{RoyalBlue}{\textit{NB: This must be checked for typos and eventual omissions.}}
+\newpage
+\textcolor{RoyalBlue}{\textit{NB: This must be checked for typos and eventual omissions.
+Also, the 2-expression access annotator is getting addressed.
+Arguably, the expansion part is the most confusing since it is multifold.
+Perhaps the tables should not include equivalent form examples because they are confusing when first looked at.
+The very interesting thing here is that there can be some really creative use of \textcolor{Red}{\textbf{\textit{triple-dot}}} with the annotators.
+This comes full circle with the semantics analyzed in the "formal" analysis for generation and matching; we will not be requiring to have to think about different syntaxes for different things from now on.
+Also any upcoming "formal" analysis of generation is cohere and shorter.}}
 
 \begin{tabularx}{\textwidth}{l|c|X}
   \textbf{Syntactical Example} & \textbf{Use}  &\textbf{Significance} \\
 \hline
 $\bm{T\{\textcolor{Magenta}{N}\}}$ & E & access type by index $\textcolor{Magenta}{N}$ in $T$ \\
-$\bm{T...\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & E & $sizeof...(T)\geq{\textcolor{Magenta}{M}}$, as $\textcolor{Magenta}{K}$ times $ T\{\textcolor{Magenta}{N}\},T\{\textcolor{Magenta}{N+1}\},T\{\textcolor{Magenta}{N+2}\},...,T\{\textcolor{Magenta}{M-1}\}$ \\
+$\bm{T\{\textcolor{Magenta}{N}\}...}$ & \textcolor{RoyalBlue}{\textbf{R}} & expand by index from $\textcolor{Magenta}{N}$ until $sizeof...(T)$ \\
+$\bm{T\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & \textcolor{RoyalBlue}{\textbf{R}} & $sizeof...(T)\in {[\textcolor{Magenta}{N,M}})$ then $ T\{\textcolor{Magenta}{N}\},T\{\textcolor{Magenta}{N+1}\},...,T\{\textcolor{Magenta}{M-1}\}$ then $\textcolor{Magenta}{K}$ times \\
+$\bm{T...\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & E & $sizeof...(T)\geq{\textcolor{Magenta}{M}}$ with $\textcolor{Magenta}{K}$ pattern\\
 $\bm{T...\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & E & $sizeof...(T)\geq{\textcolor{Magenta}{N}}$, as $\textcolor{Magenta}{K}$ times $T\{\textcolor{Magenta}{0}\},T\{\textcolor{Magenta}{1}\},T\{\textcolor{Magenta}{2}\},...,T\{\textcolor{Magenta}{sizeof...(T)-1}\}$ \\
 $\bm{T...\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{1}]}$ & E & $sizeof...(T)\geq{\textcolor{Magenta}{N}}$, as $T\{\textcolor{Magenta}{0}\},T\{\textcolor{Magenta}{1}\},T\{\textcolor{Magenta}{2}\},...,T\{\textcolor{Magenta}{sizeof...(T)-1}\}$ \\
 $\bm{T...\{\textcolor{Magenta}{N}\}[]}$ & E & $sizeof...(T)\geq{\textcolor{Magenta}{N}}$, as $T\{,\textcolor{Magenta}{0}\},T\{,\textcolor{Magenta}{1}\},T\{,\textcolor{Magenta}{2}\},...,T\{\textcolor{Magenta}{N}-1\}$ \\
