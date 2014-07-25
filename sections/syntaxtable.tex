@@ -1,76 +1,43 @@
 
 \subsection{The rules and syntax of annotation}
-\textcolor{RoyalBlue}{\textit{NB: This should substitute "Pack annotation semantics"; it should also become even shorter and it must be thoroughly checked that the semantics remain the same.}}
 
-\p The following syntax lookup tables concentrate on annotator syntax and its significance in the context of the declaration and expansion of a parameter pack.
-\textcolor{Magenta}{Magenta} colored elements are positive integral constant expressions.
-The letter $T$ is used as a pack identifier, alluding to a sequence of parameter types of the same type (non-type template parameters, type-type template parameters, template-type template parameters) and annotators serve as size constraints in declaration and expansion, while providing access by index or range to the parameters contained in a pack.
+\p In the following syntax lookup tables \textcolor{Magenta}{magenta} colored elements are positive integral constant expressions.
+The letter $T$ is used as a pack identifier with $|\overline{T}|$ equivalent to $sizeof...(T)$, alluding to a sequence of parameter types of the same type (non-type template parameters, type-type template parameters, template-type template parameters).
+Given that the pack identifier is specified prior to annotation, it may be used in constant expressions from which the annotation integral constant expressions are derived themselves; this makes \textit{equivalent forms} with non-annotated parameter packs possible thus making annotated template parameter packs a higher level abstraction of the pack concept itself.
+This is analyzed later on, for now, let's give a look at the syntax table.
+
+\begin{tabularx}{\textwidth}{l|c|X}
+  \textbf{Annotation Syntax} & \textbf{Context}  &\textbf{Significance} \\
+\hline
+$\bm{...T\{\textcolor{Magenta}{\textcolor{Magenta}{N}},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & declaration & $\bm{|\overline{T}|} \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M}) \wedge{} \bm{|\overline{T}|} \% \textcolor{Magenta}{K} == \textcolor{Magenta}{0}$ \\
+$\bm{...T\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & declaration & $\bm{|\overline{T}|} == \textcolor{Magenta}{N} \wedge{} \textcolor{Magenta}{N} \% \textcolor{Magenta}{K} == \textcolor{Magenta}{0}$ \\
+$\bm{T\{\textcolor{Magenta}{N}\}}$ & expansion & access type by index $\textcolor{Magenta}{N}$ in $T$ \\
+$\bm{T\{\textcolor{Magenta}{N}\}...}$ & expansion& expand by index from $\textcolor{Magenta}{N}$ until $\bm{|\overline{T}|}$ \\
+$\bm{T\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & expansion & $\bm{|\overline{T}|}\in {[\textcolor{Magenta}{N,M}})$ then $ T\{\textcolor{Magenta}{N}\},T\{\textcolor{Magenta}{N+1}\},...,T\{\textcolor{Magenta}{M-1}\}$ then $\textcolor{Magenta}{K}$ times \\
+$\bm{T...\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & expansion & $\bm{|\overline{T}|}\geq{\textcolor{Magenta}{M}}$ with $\textcolor{Magenta}{K}$ pattern\\
+$\bm{T...\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & expansion & $\bm{|\overline{T}|}\geq{\textcolor{Magenta}{N}}$, as $\textcolor{Magenta}{K}$ times $T\{\textcolor{Magenta}{0}\},T\{\textcolor{Magenta}{1}\},T\{\textcolor{Magenta}{2}\},...,T\{\textcolor{Magenta}{\bm{|\overline{T}|}-1}\}$ \\
+\end{tabularx}
+
+\p The constraints over the values of integral constant expressions become obvious when we start approaching parameter pack access in order to resolve EWG\#30 \cite{Abrahams2012}, while the generative features annotated packs possess make them distinct in their primary intention of use to \textit{concepts}; the latter are actually \textit{enhanced} by annotated packs.
+We thus have three kinds of annotation, as in the following rules:
 \begin{enumerate}
-\item\p The \textit{interval} annotator contains none, one or two comma separated positive integral constant expressions.
+\item\p The \textcolor{Magenta}{\textbf{\textit{interval}}} annotator contains none, one or two comma separated positive integral constant expressions.
 When no expression is specified, $sizeof...(T)$ is implied as an equivalent.
 If and only if it is not followed by the \textit{pattern} annotator and $sizeof...(T)$ is implied, it may be omitted since it represents a form equivalent to a non-annotated template parameter pack.
 In declaration with a single positive integral constant expression, a match is provided for a pack whose $sizeof...(T)$ is identical to said expression; with two, a match is provided for any compatible parameter sequence whose size is within the specified interval.
 In expansion with a single positive integral constant expression, it expands the parameter pack it accompanies to a size equal to said expresion beginning from the leftmost parameter contained;
 when used with two, it provides a valid match for any compatible parameter sequence of size within the specified interval.
 
-\item\p The \textit{pattern} annotator can contain none or one positive integral constant expressions.
+\item\p The \textcolor{Magenta}{\textbf{\textit{pattern}}} annotator can contain none or one positive integral constant expressions.
 When no expression is specified, $\bm{1}$ is implied and it may be omitted since it represents a form equivalent to an \textit{interval}-annotated pack.
 In declaration, the pattern annotator requires the pack it is applied upon to be an exact multiple of an ordered sequence of types, the latter of size equal to the integral constant expression it encloses. In expansion, it repeats the annotated pack as many times as said expression.
 The \textit{pattern} annotator is a valid construct if and only if preceded by a valid \textit{interval} annotator.
 
-\item\p The \textit{access} annotator is strictly for expansion; it is comprised of one or two comma separated integral constant expressions enclosed in curly braces immediately following a pack identifier (i.e. $T\{N\}$ and $T\{N,M\}$).
+\item\p The \textcolor{Magenta}{\textbf{\textit{access}}} annotator is strictly for expansion; it is comprised of one or two comma separated positive integral constant expressions enclosed in curly braces immediately following a pack identifier (i.e. $T\{N\}$ and $T\{N,M\}$).
 With one expression, it expands to a single parameter contained in the original pack at a position specified by the enclosed expression (i.e. $T\{N\}$).
 With two expressions, it expands to the ordered sequence of parameters between the two integral constant expressions, meaning left-closed right-open interval (i.e. $\bm{T\{N,M\} \equiv T\{N\},T\{N+1\},T\{N+2\},...T\{M-1\}}$).
 When a single expression access annotator is followed by a \textit{triple-dot} the effect is equivalent to two-expression access annotation where the second expression is $sizeof...(T)$ (i.e. $\bm{T\{N\}... \equiv T\{N,sizeof...(T)\}}$).
 \end{enumerate}
-
-\textcolor{RoyalBlue}{\textit{NB: This must be checked for typos and eventual omissions.
-It also shows why declaration is much easier than expansion, which is much more complicated with variadics involved.}}
-
-\begin{tabularx}{\textwidth}{l|c|X}
-  \textbf{Syntactical Example} & \textbf{Use}  &\textbf{Significance} \\
-\hline
-$\bm{...T\{\textcolor{Magenta}{\textcolor{Magenta}{N}},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & D & $sizeof...(T) \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M}) \wedge{} sizeof...(T) \% \textcolor{Magenta}{K} == \textcolor{Magenta}{0}$ \\
-$\bm{...T\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & D & $sizeof...(T) == \textcolor{Magenta}{N} \wedge{} \textcolor{Magenta}{N} \% \textcolor{Magenta}{K} == \textcolor{Magenta}{0}$ \\
-$\bm{...T\{\}[\textcolor{Magenta}{K}]}$ & D & $sizeof...(T) \% \textcolor{Magenta}{K} == \textcolor{Magenta}{0}$ \\
-$\bm{...T\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{1}]}$ & D & $sizeof...(T) == \textcolor{Magenta}{N}$ \\
-$\bm{...T\{\}[\textcolor{Magenta}{1}]}$ & D & $...T$ \\
-$\bm{...T\{\}[]}$ & D & $...T$ \\
-$\bm{...T\{\}}$ & D &$...T$ \\
-$\bm{...T\{\textcolor{Magenta}{sizeof...(T)}\}[\textcolor{Magenta}{1}]}$ & D & $...T$ \\
-$\bm{...T\{\textcolor{Magenta}{sizeof...(T)}\}[]}$ & D &  $...T$ \\
-$\bm{...T\{\textcolor{Magenta}{sizeof...(T)}\}}$ & D & $...T$ \\
-$\bm{...T}$ & D & $...T$ \\
-\end{tabularx}
-\newpage
-\textcolor{RoyalBlue}{\textit{NB: This must be checked for typos and eventual omissions.
-Also, the 2-expression access annotator is getting addressed.
-Arguably, the expansion part is the most confusing since it is multifold.
-Perhaps the tables should not include equivalent form examples because they are confusing when first looked at.
-The very interesting thing here is that there can be some really creative use of \textcolor{Red}{\textbf{\textit{triple-dot}}} with the annotators.
-This comes full circle with the semantics analyzed in the "formal" analysis for generation and matching; we will not be requiring to have to think about different syntaxes for different things from now on.
-Also any upcoming "formal" analysis of generation is cohere and shorter.}}
-
-\begin{tabularx}{\textwidth}{l|c|X}
-  \textbf{Syntactical Example} & \textbf{Use}  &\textbf{Significance} \\
-\hline
-$\bm{T\{\textcolor{Magenta}{N}\}}$ & E & access type by index $\textcolor{Magenta}{N}$ in $T$ \\
-$\bm{T\{\textcolor{Magenta}{N}\}...}$ & \textcolor{RoyalBlue}{\textbf{R}} & expand by index from $\textcolor{Magenta}{N}$ until $sizeof...(T)$ \\
-$\bm{T\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & \textcolor{RoyalBlue}{\textbf{R}} & $sizeof...(T)\in {[\textcolor{Magenta}{N,M}})$ then $ T\{\textcolor{Magenta}{N}\},T\{\textcolor{Magenta}{N+1}\},...,T\{\textcolor{Magenta}{M-1}\}$ then $\textcolor{Magenta}{K}$ times \\
-$\bm{T...\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & E & $sizeof...(T)\geq{\textcolor{Magenta}{M}}$ with $\textcolor{Magenta}{K}$ pattern\\
-$\bm{T...\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & E & $sizeof...(T)\geq{\textcolor{Magenta}{N}}$, as $\textcolor{Magenta}{K}$ times $T\{\textcolor{Magenta}{0}\},T\{\textcolor{Magenta}{1}\},T\{\textcolor{Magenta}{2}\},...,T\{\textcolor{Magenta}{sizeof...(T)-1}\}$ \\
-$\bm{T...\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{1}]}$ & E & $sizeof...(T)\geq{\textcolor{Magenta}{N}}$, as $T\{\textcolor{Magenta}{0}\},T\{\textcolor{Magenta}{1}\},T\{\textcolor{Magenta}{2}\},...,T\{\textcolor{Magenta}{sizeof...(T)-1}\}$ \\
-$\bm{T...\{\textcolor{Magenta}{N}\}[]}$ & E & $sizeof...(T)\geq{\textcolor{Magenta}{N}}$, as $T\{,\textcolor{Magenta}{0}\},T\{,\textcolor{Magenta}{1}\},T\{,\textcolor{Magenta}{2}\},...,T\{\textcolor{Magenta}{N}-1\}$ \\
-$\bm{T...\{\}[\textcolor{Magenta}{K}]}$ & E & as $\textcolor{Magenta}{K}$ times $T\{\textcolor{Magenta}{0}\},T\{\textcolor{Magenta}{1}\},T\{\textcolor{Magenta}{2}\},...,T\{\textcolor{Magenta}{sizeof...(T)-1}\}$ \\
-$\bm{T...\{\textcolor{Magenta}{sizeof...(T)}\}[\textcolor{Magenta}{K}]}$ & E & as $\textcolor{Magenta}{K}$ times $T\{\textcolor{Magenta}{0}\},T\{\textcolor{Magenta}{1}\},T\{\textcolor{Magenta}{2}\},...,T\{\textcolor{Magenta}{sizeof...(T)-1}\}$ \\
-$\bm{T...\{\}[\textcolor{Magenta}{1}]}$ & E & $T...$ \\
-$\bm{T...\{\}[]}$ & E & $T...$ \\
-$\bm{T...\{\}}$ & E & $T...$\\
-$\bm{T...\{\textcolor{Magenta}{sizeof...(T)}\}[\textcolor{Magenta}{1}]}$ & E & $T...$ \\
-$\bm{T...\{\textcolor{Magenta}{sizeof...(T)}\}[]}$ & E & $T...$ \\
-$\bm{T...\{\textcolor{Magenta}{sizeof...(T)}\}}$ & E & $T...$\\
-$\bm{T...}$ & E & $T...$\\
-\end{tabularx}
 
 \p Annotators thus allow index and interval-based parameter pack semantics to be used in both declaration (for matching purposes) and expansion (for matching and generative purposes) and address directly \textbf{EWG\#30} \cite{Abrahams2012} using terse, unambiguous and coherent syntax that graciously degenerates into parameter packs as we know them today.
 This is by design so that they can be easily submitted to \textit{partial ordering}, a well known matching criterion in C++ between them and regular parameter packs.
