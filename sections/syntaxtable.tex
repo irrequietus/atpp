@@ -14,8 +14,8 @@ $\bm{...T\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & declaration & $\
 $\bm{T\{\textcolor{Magenta}{N}\}}$ & expansion & access type by index $\textcolor{Magenta}{N}$ in $T$ \\
 $\bm{T\{\textcolor{Magenta}{N}\}...}$ & expansion& $T\{\textcolor{Magenta}{N}\},T\{\textcolor{Magenta}{N+1}\},T\{\textcolor{Magenta}{N+2}\},\dots{},T\{\textcolor{Magenta}{sizeof...(T)-1}\}$ \\
 $\bm{T\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & expansion & $T\{\textcolor{Magenta}{N}\},T\{\textcolor{Magenta}{N+1}\},...,T\{\textcolor{Magenta}{M-1}\}$ repeated $\textcolor{Magenta}{K}$ times \\
-$\bm{T...\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & expansion & $\bm{sizeof...(T)} \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M})$ repeated $\textcolor{Magenta}{K}$ times \\
-$\bm{T...\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}}$ & expansion & $\bm{sizeof...(T)} \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M})$ repeated $\textcolor{Magenta}{K}$ times \\
+$\bm{T...\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & expansion & $\bm{sizeof...(T)} \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M})$, is $\textcolor{Magenta}{K}$-tuple \\
+$\bm{T...\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}}$ & expansion & $\bm{sizeof...(T)} \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M})$, is $\textcolor{Magenta}{K}$-tuple \\
 $\bm{T...\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & expansion & $\bm{sizeof...(T)}\geq{\textcolor{Magenta}{N}}$, to $T\{\textcolor{Magenta}{0}\},T\{\textcolor{Magenta}{1}\},T\{\textcolor{Magenta}{2}\},...,T\{\textcolor{Magenta}{N-1}\}$ $\textcolor{Magenta}{K}$ times\\
 \end{tabularx}
 
