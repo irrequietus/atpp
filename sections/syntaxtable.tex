@@ -18,10 +18,10 @@ When no expression is specified, $\bm{1}$ is implied and it may be omitted since
 In declaration, the pattern annotator requires the pack it is applied upon to be an exact multiple of an ordered sequence of types, the latter of size equal to the integral constant expression it encloses. In expansion, it repeats the annotated pack as many times as said expression.
 The \textit{pattern} annotator is a valid construct if and only if preceded by a valid \textit{interval} annotator.
 
-\item\p The \textit{access} annotator is strictly related to expansion and is comprised of one or two comma separated integral constant expressions enclosed in curly braces immediately following a pack identifier.
-When one expression, it expands to a single parameter contained in the original pack at a position specified by said integral constant expression.
-With two expressions, it expands to the sequence of parameters between the two integral constant expressions, meaning left-closed right-open interval.
-The final form of the access annotator is a shorthand equivalent of its two-expressions form when the right expression is supposed to be a $sizeof...(T)$ for the pack involved: we just use a single-expression access annotator followed by the \textit{triple-dot}.
+\item\p The \textit{access} annotator is strictly for expansion; it is comprised of one or two comma separated integral constant expressions enclosed in curly braces immediately following a pack identifier (i.e. $T\{N\}$ and $T\{N,M\}$).
+With one expression, it expands to a single parameter contained in the original pack at a position specified by the enclosed expression (i.e. $T\{N\}$).
+With two expressions, it expands to the ordered sequence of parameters between the two integral constant expressions, meaning left-closed right-open interval (i.e. $\bm{T\{N,M\} \equiv T\{N\},T\{N+1\},T\{N+2\},...T\{M-1\}}$).
+When a single expression access annotator is followed by a \textit{triple-dot} the effect is equivalent to two-expression access annotation where the second expression is $sizeof...(T)$ (i.e. $\bm{T\{N\}... \equiv T\{N,sizeof...(T)\}}$).
 \end{enumerate}
 
 \textcolor{RoyalBlue}{\textit{NB: This must be checked for typos and eventual omissions.
