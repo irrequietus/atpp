@@ -2,6 +2,8 @@
 Annotated C++ Template Parameter Packs
 ======================================
 
+This is related to EWG30: http://cplusplus.github.io/EWG/ewg-active.html#30
+
 This document explores the consequences of extending variadic templates in C++
 through optional annotation of parameter packs. This would allow for packs to
 be declared with "interval/ranged", "determined/fixed" semantics that can be
@@ -24,7 +26,7 @@ This is not a complete work yet. I am periodically releasing updated pdf files
 of its current status in good will, for the sake of fruitful discussions on the
 subject. My intention is to make a proper proposal out of it and submit it to
 the C++ committee. Some of these semantics can be implemented in library form
-with some precautions.
+with some precautions. Remember to check the other branches.
 
 Full details at the project website at: http://atpp.irrequietus.eu. The only
 repository the draft is located for tracking real-time changes, can be found in
