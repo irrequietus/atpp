@@ -12,7 +12,6 @@ This is analyzed later on, for now, let's give a look at the syntax table.
 $\bm{...T\{\textcolor{Magenta}{\textcolor{Magenta}{N}},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & declaration & $\bm{sizeof...(T)} \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M})$, as \textcolor{Magenta}{K}-tuple of the same included sequence \\
 $\bm{...T\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & declaration & $\bm{sizeof...(T)} == \textcolor{Magenta}{N}$, as \textcolor{Magenta}{K}-tuple of the same included sequence \\
 $\bm{T\{\textcolor{Magenta}{N}\}}$ & expansion & access parameter at index $\textcolor{Magenta}{N}$ in pack $T$ \\
-$\bm{T\{\textcolor{Magenta}{N}\}...}$ & expansion& $T\{\textcolor{Magenta}{N}\},T\{\textcolor{Magenta}{N+1}\},T\{\textcolor{Magenta}{N+2}\},\dots{},T\{\textcolor{Magenta}{sizeof...(T)-1}\}$ \\
 $\bm{T\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & expansion & $T\{\textcolor{Magenta}{N}\},T\{\textcolor{Magenta}{N+1}\},...,T\{\textcolor{Magenta}{M-1}\}$ expanded $\textcolor{Magenta}{K}$ times \\
 $\bm{T...\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & expansion & $\bm{sizeof...(T)} \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M})$, then expand that $T$ for \textcolor{Magenta}{K} times   \\
 $\bm{T...\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & expansion & $T\{\textcolor{Magenta}{0}\},T\{\textcolor{Magenta}{1}\},T\{\textcolor{Magenta}{2}\},...,T\{\textcolor{Magenta}{N-1}\}$, then expand that for $\textcolor{Magenta}{K}$ times\\
@@ -36,7 +35,6 @@ The \textit{pattern} annotator is a valid construct if and only if preceded by a
 \item\p The \textcolor{Magenta}{\textbf{\textit{access}}} annotator is strictly for expansion; it is comprised of one or two comma separated positive integral constant expressions enclosed in curly braces immediately following a pack identifier (i.e. $T\{N\}$ and $T\{N,M\}$).
 With one expression, it expands to a single parameter contained in the original pack at a position specified by the enclosed expression (i.e. $T\{N\}$).
 With two expressions, it expands to the ordered sequence of parameters between the two integral constant expressions, meaning left-closed right-open interval (i.e. $\bm{T\{N,M\} \equiv T\{N\},T\{N+1\},T\{N+2\},...T\{M-1\}}$).
-When a single expression access annotator is followed by a \textit{triple-dot} the effect is equivalent to two-expression access annotation where the second expression is $sizeof...(T)$ (i.e. $\bm{T\{N\}... \equiv T\{N,sizeof...(T)\}}$).
 \end{enumerate}
 
 \p Annotators thus allow index and interval-based parameter pack semantics to be used in both declaration (for matching purposes) and expansion (for matching and generative purposes) and address directly \textbf{EWG\#30} \cite{Abrahams2012} using terse, unambiguous and coherent syntax that graciously degenerates into parameter packs as we know them today.
