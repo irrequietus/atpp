@@ -20,19 +20,19 @@ $\bm{T...\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & expansion & $T\{
 \p The constraints over the values of integral constant expressions become obvious when we start approaching parameter pack access in order to resolve EWG\#30 \cite{Abrahams2012}, while the generative features annotated packs possess make them distinct in their primary intention of use to \textit{concepts}; the latter are actually \textit{enhanced} by annotated packs.
 We thus have three kinds of annotation, as in the following rules:
 \begin{enumerate}
-\item\p The \textcolor{Magenta}{\textbf{\textit{interval}}} annotator contains none, one or two comma separated positive integral constant expressions.
+\item\p The \textcolor{Magenta}{\textbf{\textit{size}}} annotator contains none, one or two comma separated positive integral constant expressions.
 When no expression is specified, $sizeof...(T)$ is implied as an equivalent.
 If and only if it is not followed by the \textit{pattern} annotator and $sizeof...(T)$ is implied, it may be omitted since it represents a form equivalent to a non-annotated template parameter pack.
 In declaration with a single positive integral constant expression, a match is provided for a pack whose $sizeof...(T)$ is identical to said expression; with two, a match is provided for any compatible parameter sequence whose size is within the specified interval.
 In expansion with a single positive integral constant expression, it expands the parameter pack it accompanies to a size equal to said expresion beginning from the leftmost parameter contained;
 when used with two, it provides a valid match for any compatible parameter sequence of size within the specified interval.
 
-\item\p The \textcolor{Magenta}{\textbf{\textit{pattern}}} annotator can contain none or one positive integral constant expressions.
+\item\p The \textcolor{Magenta}{\textbf{\textit{tuple}}} annotator can contain none or one positive integral constant expressions.
 When no expression is specified, $\bm{1}$ is implied and it may be omitted since it represents a form equivalent to an \textit{interval}-annotated pack.
 In declaration, the pattern annotator requires the pack it is applied upon to be an exact multiple of an ordered sequence of types, the latter of size equal to the integral constant expression it encloses. In expansion, it repeats the annotated pack as many times as said expression.
 The \textit{pattern} annotator is a valid construct if and only if preceded by a valid \textit{interval} annotator.
 
-\item\p The \textcolor{Magenta}{\textbf{\textit{access}}} annotator is strictly for expansion; it is comprised of one or two comma separated positive integral constant expressions enclosed in curly braces immediately following a pack identifier (i.e. $T\{N\}$ and $T\{N,M\}$).
+\item\p The \textcolor{Magenta}{\textbf{\textit{range}}} annotator is strictly for expansion; it is comprised of one or two comma separated positive integral constant expressions enclosed in curly braces immediately following a pack identifier (i.e. $T\{N\}$ and $T\{N,M\}$).
 With one expression, it expands to a single parameter contained in the original pack at a position specified by the enclosed expression (i.e. $T\{N\}$).
 With two expressions, it expands to the ordered sequence of parameters between the two integral constant expressions, meaning left-closed right-open interval (i.e. $\bm{T\{N,M\} \equiv T\{N\},T\{N+1\},T\{N+2\},...T\{M-1\}}$).
 \end{enumerate}
