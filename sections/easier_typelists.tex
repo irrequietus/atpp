@@ -33,7 +33,7 @@ struct error_type {};
 /* the typevector is actually just a holder for a pack */
 template<typename... X> struct typevector {};
 \end{minted}
-\item\p The interval annotator is used for declaring an annotated parameter pack in the following partial specializations of {\textit{at\_pos}}, where the constant expression of the right bound will resolve to $T\{0,0\}$ when access beyond the bounds is attempted.
+\item\p The size annotator is used for declaring an annotated parameter pack in the following partial specializations of {\textit{at\_pos}}, where the constant expression of the right bound will resolve to $T\{0,0\}$ when access beyond the bounds is attempted.
 This is not a valid interval, therefore this specialization will be removed from the viable candidates set due to SFINAE, with the unspecialized class template definition providing a better match. 
 \begin{minted}{c++}
 template<std::size_t N, typename>
@@ -46,7 +46,7 @@ struct at_pos<N,typevector<T...>>
 \end{minted}
 
 \item\p The combination of annotated and non-annotated packs can also be used for quickly altering the type parameter present at a given position in the {\textit{typevector}}.
-Again, the interval annotation is deployed for placing invalid access through a constant expression evaluating to 0, forcing $T\{0,0\}$ when that is attempted.
+Again, size annotation is deployed for placing invalid access through a constant expression evaluating to 0, forcing $T\{0,0\}$ when that is attempted.
 \begin{minted}{c++}
 template<std::size_t N, typename>
 struct alter_at { typedef error_type type; };
@@ -76,7 +76,7 @@ struct split_at<N,typevector<L...{N},R...>> { /* anchored ! */
 };
 \end{minted}
 
-\item\p Given that in the context of the proposal $\bm{\overline{T}\{0,|\overline{T}|\}[1] \equiv \overline{T}\{0,|\overline{T}|\}}$ while $\bm{\overline{T}\{0,|\overline{T}|\}[0] \equiv \emptyset{}}$ with the latter invoking SFINAE since it would resolve to an empty set (making the template parameter list invalid) and $\overline{T}\{0,|\overline{T}|\}\equiv{\overline{T}\{|\overline{T}|\}}\equiv{\overline{T}\{\}}$, we can exploit the pattern annotator in declaration and the \textit{individual accessor} within template definition body for an interesting rewrite of at least one of the partial specializations defined before, e.g. of {\textit{at\_pos}}:
+\item\p Given that in the context of the proposal $\bm{\overline{T}\{0,|\overline{T}|\}[1] \equiv \overline{T}\{0,|\overline{T}|\}}$ while $\bm{\overline{T}\{0,|\overline{T}|\}[0] \equiv \emptyset{}}$ with the latter invoking SFINAE since it would resolve to an empty set (making the template parameter list invalid) and $\overline{T}\{0,|\overline{T}|\}\equiv{\overline{T}\{|\overline{T}|\}}\equiv{\overline{T}\{\}}$, we can exploit the tuple annotator in declaration and the \textit{individual accessor} within template definition body for an interesting rewrite of at least one of the partial specializations defined before, e.g. of {\textit{at\_pos}}:
 \begin{minted}{c++}
 template<std::size_t N, typename... T{}[N < sizeof...(T)]>
 struct at_pos<N,typevector<T...>>

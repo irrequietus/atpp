@@ -43,11 +43,11 @@ Importantly, they may even ease the implementation of purely functional programm
 \p The \textit{actual} effect of adopting pack processing features at a language level is to turn constructs like \textit{typelists} \cite{Czarnecki2000,Alexandrescu2001,Abrahams2004} into first class citizens within template parameter lists.
 In combination with \textit{concepts} \cite{Stroustrup2012,Sutton2013} (constraints that do not overlap with the actual intention of annotation), such features can almost totally eliminate the need for laborious source code boilerplate in vertical and horizontal dimensions, where even preprocessor meta-programming seems at times inevitable.
 
-\subsection{Getting quickly acquainted with the syntax}
+\section{Getting quickly acquainted with the syntax}
 \p \textit{Annotators} are tied up to the \textit{triple-dot} operator and pack identifier as a logical extension of the pack concept; there is where dealing with C++ abstract syntax tree building has finished addressing code strictly specific to a parameter pack.
-The curly braces (i.e. \textit{interval} annotator) have been selected because \textit{they are not used currently in the context of a template parameter list} following pack identifiers or \textit{triple-dot} operators and are therefore guaranteed to provide unambiguous parsing.
-These can be followed by an additional annotator in square brackets (i.e. \textit{pattern annotator}) that can only be present if the \textit{interval} annotator follows a pack identifier or a \textit{triple-dot} operator.
-Given that all standard C++ compilers issue errors when parameter packs are not expanded through the \textit{triple-dot} operator, the presence of a single integral constant expression within the \textit{interval} annotator (i.e. $\{\}$) is used as index based access for the elements of a parameter pack, \textit{omitting the triple-dot} and thus providing an unambiguous parse for the pack at minimal cost for an implementor.
+The curly braces (i.e. \textit{size} annotator) have been selected because \textit{they are not used currently in the context of a template parameter list} following pack identifiers or \textit{triple-dot} operators and are therefore guaranteed to provide unambiguous parsing.
+These can be followed by an additional annotator in square brackets (i.e. \textit{tuple annotator}) that can only be present if the \textit{size} annotator follows a pack identifier or a \textit{triple-dot} operator.
+Given that all standard C++ compilers issue errors when parameter packs are not expanded through the \textit{triple-dot} operator, the presence of a single integral constant expression within the \textit{size} annotator (i.e. $\{\}$) is used as index based access for the elements of a parameter pack, \textit{omitting the triple-dot} and thus providing an unambiguous parse for the pack at minimal cost for an implementor.
 
 \p A series of initial examples are offered in order to familiarize the reader with the syntax; its coherence and unambiguity are analyzed later on.
 The full syntax is used in each occasion and the reader should be aware that these represent \text{optional syntactic extensions} to pack notation but in order for annotation to be valid, the annotators have to be present in a certain order.
@@ -78,3 +78,5 @@ template<typename... W{S,D}[F]> void function_template(W...)
 \end{minted}
 
 \p Future revisions of this draft will display similar effects of the same \textit{pack annotation} semantics for non-type and template-type template parameters and their interaction with concepts \cite{Stroustrup2012,Sutton2013}.
+\newpage
+\input{sections/syntaxtable.tex}
