@@ -1,0 +1,11 @@
+\p Annotation by \textit{size} with deducible endpoint expressions can allow specification of template parameter lists where \textit{multiple} size-annotated parameter packs coexist in declarative context with even non-annotated packs.
+\textcolor{RoyalBlue}{When multiple size-annotated packs are present, futher work is needed to specify when deducibility is ensured (on the to-do list of the current branch) otherwise ambiguity ensues.}
+
+\begin{minted}{c++}
+/* 1: there is a way to allow this but complexity must be justified and properly
+ *    worded to make a point for or against it */
+template<typename... X{5,10}, typename... Y{3,5}> struct sample1 {}; /* see 1 */
+/* 2: these are more than ok. */
+template<typename... X{5,10}, typename... Y>      struct sample2 {}; /* ok */
+template<typename... X{10}, typename... Y>        struct sample3 {}; /* ok */
+\end{minted}
