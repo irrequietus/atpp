@@ -7,10 +7,10 @@ Given that the pack identifier is specified prior to annotation, it may be used 
 This is analyzed later on, for now, let's give a look at the syntax table.
 
 \begin{tabularx}{\textwidth}{l|c|X}
-  \textbf{Annotation Syntax} & \textbf{Context}  &\textbf{Significance} \\
+  \textbf{Syntax} & \textbf{Context}  &\textbf{Significance} \\
 \hline
-$\bm{...T\{\textcolor{Magenta}{\textcolor{Magenta}{N}},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & declaration & $\bm{sizeof...(T)} \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M})$, \textcolor{Magenta}{K}-tuple of first $sizeof...(T)/K$ parameters \\
-$\bm{...T\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & declaration & $\bm{sizeof...(T)} == \textcolor{Magenta}{N}$, \textcolor{Magenta}{K}-tuple of first $sizeof...(T)/K$ parameters \\
+$\bm{...T\{\textcolor{Magenta}{\textcolor{Magenta}{N}},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & declaration & $\bm{sizeof...(T)} \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M})$, \textit{any}-tuple of first $sizeof...(T)/K$ parameters \\
+$\bm{...T\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & declaration & $\bm{sizeof...(T)} == \textcolor{Magenta}{N}$, \textit{any}-tuple of first $sizeof...(T)/K$ parameters \\
 $\bm{T\{\textcolor{Magenta}{N}\}}$ & expansion & access parameter at index $\textcolor{Magenta}{N}$ in pack $T$ \\
 $\bm{T\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & expansion & $T\{\textcolor{Magenta}{N}\},T\{\textcolor{Magenta}{N+1}\},...,T\{\textcolor{Magenta}{M-1}\}$ expanded $\textcolor{Magenta}{K}$ times \\
 $\bm{T...\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & expansion & $\bm{sizeof...(T)} \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M})$, then expand that $T$ for \textcolor{Magenta}{K} times   \\
