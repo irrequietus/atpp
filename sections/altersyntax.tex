@@ -1,8 +1,8 @@
 {\color{magenta}{\textit{Syntax alternatives are important since there are far too many ways to give leeway to the stylistic preference to the point of it becoming an "argument" over actual substance of the paper at hand.
 Citations pending of my original post about them on the std-proposals mailing list.}}}
 
-\p By premise, the $\bm{\{\}[]}$ syntax has been selected as the minimum identifier set for providing unambiguous parsing for integral constant expressions accompanying parameter packs within template parameter lists.
-The following syntax is also explored as a viable substitute, for the sake of discussion of \textit{the same ideas}, given that at times the stylistic preferences of different programmers tend to gravitate away from the substance of the matters involved.
+\p The $\bm{\{\}[]}$ syntax was originally selected as the minimum identifier set for providing unambiguous parsing for integral constant expression enclosures for annotated packs within a template parameter list.
+The following syntax is now explored as a viable substitute, for the sake of discussion of \textit{the same ideas}. At times, the stylistic preferences of programmers of different background and skill tend to gravitate away from the substance of the matters involved.
 For this reason, while not proposed so far, one can also think of these alternatives for the $\bm{\{\}[]}$ enclosures used for annotators:
 \begin{enumerate}
 \item In one case, we could substitute $\bm{...T\{\}[]}$ by $\bm{...T:[][]}$, while commas are used for separating integral constant expressions for range endpoints.
@@ -60,8 +60,9 @@ using at_pos_alternative = T:(X);
 \end{minted}
 \end{enumerate}
 
-Again, the context under which such syntax alternatives are discussed does not change or deviate from the context of this draft.
-Such alternatives were first presented in the std-proposals mailing list during a discussion about syntax the author had with Sean Middleditch.
-As for the use of sequences of enclosures where one of them is empty, C++ has precedent in this given that C++11 $\bm{[]()\{\}();}$ constitutes a lambda declared and invoked in situ.
+\p The context under which such syntax alternatives are discussed does not change or deviate from the context of this draft.
+Such alternatives were first presented in the std-proposals mailing list during a discussion about syntax the author had with Sean Middleditch and could be of choice in a future edition of this document.
+As for the use of sequences of different enclosures where one of them is empty, C++ has precedent in this given that C++11 $\bm{[]()\{\}();}$ constitutes a lambda declared and invoked in situ.
 The fact that $\bm{[]}$ is never followed by a $\bm{()}$ in any of the alternatives is by design, in order not to clash with any evolution of constexpr lambdas.
-When a colon is used immediately after the pack identifier, an additional advantage over a dot is to avoid the semantic confusion of C++ class object instantiation semantics over template instantiation semantics, which have a more declarative nature, bound to compile-time computation.
+This is also one of the reasons why the $\bm{\{\}[]}$ was choosen as primary platform for explaining and proposing \textit{the internal mechanics of parameter pack annotation}.
+In these alternative syntaxes, a colon is used immediately after the pack identifier, an additional advantage over a dot is to avoid the semantic confusion of C++ class object instantiation semantics over template instantiation semantics, which have a more declarative nature, bound to compile-time evaluation.
