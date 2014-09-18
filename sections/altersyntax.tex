@@ -1,0 +1,67 @@
+{\color{magenta}{\textit{Syntax alternatives are important since there are far too many ways to give leeway to the stylistic preference to the point of it becoming an "argument" over actual substance of the paper at hand.
+Citations pending of my original post about them on the std-proposals mailing list.}}}
+
+\p By premise, the $\bm{\{\}[]}$ syntax has been selected as the minimum identifier set for providing unambiguous parsing for integral constant expressions accompanying parameter packs within template parameter lists.
+The following syntax is also explored as a viable substitute, for the sake of discussion of \textit{the same ideas}, given that at times the stylistic preferences of different programmers tend to gravitate away from the substance of the matters involved.
+For this reason, while not proposed so far, one can also think of these alternatives for the $\bm{\{\}[]}$ enclosures used for annotators:
+\begin{enumerate}
+\item In one case, we could substitute $\bm{...T\{\}[]}$ by $\bm{...T:[][]}$, while commas are used for separating integral constant expressions for range endpoints.
+The insertion of the colon after the declared pack identifier serves for avoiding clashes with array type based syntax, especially when it comes to non-type template parameter packs.
+\begin{minted}{c++}
+// #1 syntax alternative, not in proposed, but in proposal context.
+template<std::size_t N, std::size_t M, std::size_t K>
+struct sample {
+    template<typename... T:[N,M][K]>
+    struct atpp_syntax_alternative { /* ... */ };
+};
+
+template<std::size_t X, typename... T:[][X < sizeof...(T)]>
+using at_pos = T:[X];
+    
+\end{minted}
+\item Another alternative would be to substitute the comma for a single colon, which would provide another kind of stylistical alternative for specifying range endpoints.
+Take note of how index based access would be done in this case, as in the following examples.
+\begin{minted}{c++}
+// #2 syntax alternative, not in proposed, but in proposal context.
+template<std::size_t N, std::size_t M, std::size_t K>
+struct sample {
+    template<typename... T:[N:M][K]>
+    struct atpp_syntax_alternative { /* ... */ };
+};
+
+template<std::size_t X, typename... T:[][X < sizeof...(T)]>
+using at_pos_alternative = T:[X];
+\end{minted}
+
+\item No reason why $()$ enclosures cannot be used as well, provided a single colon follows the declared pack identifier - as is in the practice of this paper.
+\begin{minted}{c++}
+// #3 syntax alternative, not in proposed, but in proposal context.
+template<std::size_t N, std::size_t M, std::size_t K>
+struct sample {
+    template<typename... T:(N,M)[K]>
+    struct atpp_syntax_alternative { /* ... */ };
+};
+
+template<std::size_t X, typename... T:()[X < sizeof...(T)]>
+using at_pos_alternative = T:(X);
+\end{minted}
+
+\item Same goes for the use of $()$ with a single colon for separating range endpoints; it really is in the eye of the beholder as to which one is better.
+\begin{minted}{c++}
+// #4 syntax alternative, not in proposed, but in proposal context.
+template<std::size_t N, std::size_t M, std::size_t K>
+struct sample {
+    template<typename... T:(N:M)[K]>
+    struct atpp_syntax_alternative { /* ... */ };
+};
+
+template<std::size_t X, typename... T:()[X < sizeof...(T)]>
+using at_pos_alternative = T:(X);
+\end{minted}
+\end{enumerate}
+
+Again, the context under which such syntax alternatives are discussed does not change or deviate from the context of this draft.
+Such alternatives were first presented in the std-proposals mailing list during a discussion about syntax the author had with Sean Middleditch.
+As for the use of sequences of enclosures where one of them is empty, C++ has precedent in this given that C++11 $\bm{[]()\{\}();}$ constitutes a lambda declared and invoked in situ.
+The fact that $\bm{[]}$ is never followed by a $\bm{()}$ in any of the alternatives is by design, in order not to clash with any evolution of constexpr lambdas.
+When a colon is used immediately after the pack identifier, an additional advantage over a dot is to avoid the semantic confusion of C++ class object instantiation semantics over template instantiation semantics, which have a more declarative nature, bound to compile-time computation.
