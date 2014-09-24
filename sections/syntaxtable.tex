@@ -11,11 +11,11 @@ This is analyzed later on, for now, let's give a look at the syntax table.
 \hline
 $\bm{...T\{\textcolor{Magenta}{\textcolor{Magenta}{N}},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & declaration & $\bm{sizeof...(T)} \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M})$, \textit{any}-tuple of first $sizeof...(T)/K$ parameters \\
 $\bm{...T\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & declaration & $\bm{sizeof...(T)} == \textcolor{Magenta}{N}$, \textit{any}-tuple of first $sizeof...(T)/K$ parameters \\
+$\bm{T...\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & expansion & $\bm{sizeof...(T)} \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M})$, then expand that ${\bm{T}}$ for \textcolor{Magenta}{K} times   \\
+$\bm{T...\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & expansion & $\bm{sizeof...(T) == N}$, then expand that ${\bm{T}}$ for $\textcolor{Magenta}{K}$ times\\
 $\bm{T\{\textcolor{Magenta}{N}\}}$ & expansion & access parameter at index $\textcolor{Magenta}{N}$ in pack $T$ \\
 $\bm{T\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]...}$ & expansion & access parameter at index $\textcolor{Magenta}{N}$ in pack $T$, expand \textcolor{Magenta}{K} times\\
 $\bm{T\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]...}$ & expansion & $T\{\textcolor{Magenta}{N}\},T\{\textcolor{Magenta}{N+1}\},...,T\{\textcolor{Magenta}{M-1}\}$ expanded $\textcolor{Magenta}{K}$ times \\
-$\bm{T...\{\textcolor{Magenta}{N},\textcolor{Magenta}{M}\}[\textcolor{Magenta}{K}]}$ & expansion & $\bm{sizeof...(T)} \in [\textcolor{Magenta}{N},\textcolor{Magenta}{M})$, then expand that $T$ for \textcolor{Magenta}{K} times   \\
-$\bm{T...\{\textcolor{Magenta}{N}\}[\textcolor{Magenta}{K}]}$ & expansion & $T\{\textcolor{Magenta}{0}\},T\{\textcolor{Magenta}{1}\},T\{\textcolor{Magenta}{2}\},...,T\{\textcolor{Magenta}{N-1}\}$, then expand that for $\textcolor{Magenta}{K}$ times\\
 \end{tabularx}
 
 \p The constraints over the values of integral constant expressions become obvious when we start approaching parameter pack access in order to resolve EWG\#30 \cite{Abrahams2012}, while the generative features annotated packs possess make them distinct in their primary intention of use to \textit{concepts}; the latter are actually \textit{enhanced} by annotated packs.
@@ -27,9 +27,9 @@ When no expression is explicitly specified, $\bm{sizeof...(T)}$ is the implied \
 In \textit{declarative context}, the pack identifier is specified within \textit{triple-dot} and the annotator; in \textit{expansive context}, the pack identifier precedes the \textit{triple-dot} in full compliance with current parameter pack semantics.
 Whenever used in \textit{expansive context}, any expressions related to \textit{size} annotation must express pack expansion to a size within the interval specified in declaration.
 
-\item\p The \textcolor{Magenta}{\textbf{\textit{range}}} annotator is strictly used in \textit{expansive context}, as either one or two comma separated and curly brace enclosed integral constant expressions immediately following an already specified pack identifier, without an accompanying \textit{triple-dot} specifier.
-With one expression, it expands to a single parameter contained in the original pack whose \textit{index} is the enclosed expression (i.e. $\bm{T\{N\}}$).
-When two expressions are used, they serve as endpoints of a left-closed, right-open interval of \textit{indices} to which the pack expands (i.e. $\bm{T\{N,M\} \equiv T\{N\},T\{N+1\},T\{N+2\},...T\{M-1\}}$).
+\item\p The \textcolor{Magenta}{\textbf{\textit{range}}} annotator is strictly used in \textit{expansive context}, as either one or two comma separated and curly brace enclosed integral constant expressions immediately following an already specified pack identifier.
+With one expression, it expands to a single parameter contained in the original pack whose \textit{index} is the enclosed expression (i.e. $\bm{T\{N\}}$). If it is followed by a \textit{tuple} annotator, it must be succeeded by a \textit{triple-dot} and is equivalent to expanding that particular parameter as many times as the integral constant expression in the \textit{tuple} annotator.
+When two expressions are used, they serve as endpoints of a left-closed, right-open interval of \textit{indices} to which the pack expands and it must always be followed by a \textit{triple-dot} (i.e. $\bm{T\{N,M\}[K]... \equiv T\{N\},T\{N+1\},T\{N+2\},...,T\{M-1\}} \times K $).
 
 \item\p The \textcolor{Magenta}{\textbf{\textit{tuple}}} annotator is an omissible (\textit{strictly following curly-braced annotation}) square bracket enclosed integral constant expression whose implied value is $\bm{1}$.
 In \textit{declarative context} it has reflective properties upon the types comprising the pack, since it requires the pack to be an exact multiple of its first $\bm{sizeof...(T)/k}$ parameters  with \textbf{\textit{k}} being the enclosed integral constant expression.
