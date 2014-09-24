@@ -67,7 +67,7 @@ In \textit{expansive context}, it repeats the annotated pack as many times as sa
 \p The interesting thing from this table is that there is a semantic overlap between ranged size and ranged access annotation in expansion when the endpoints specify a [0,sizeof...(T)) interval;
 in the first case you are asking for a match for a sizeof...(T) sized pack, in the second case you are generating the same pack because [0,sizeof...(T)) is identical to T.
 
-\p Note that there is no T\{N\}... equivalent because that is used for declaring a non-type parameter pack whose non-type parameters are of type T\{N\}, given an already declared pack T.
+\p Note that there is no T\{N\}... form because that is used for declaring a non-type parameter pack whose non-type parameters are of type T\{N\}, given an already declared pack T.
 \textcolor{RoyalBlue}{This should be a nice place to put other clarifications in respect to
 array type definitions based on T\{N\}.
 Consider adding the \textit{applicative} features of the C++11/14 \textit{triple-dot} in this section as an example as well.
