@@ -1,0 +1,37 @@
+\p Provided T\{N\} is a type suitable for arrays, one wishes to have an X sized array of values of type T\{N\}.
+Usually, an identifier for this is placed between the type declarator and the array notation [], however, it is at times possible to omit the identifier for brevity in our constructs so we must make take care of such an eventual collision.
+One solution would be to resort to decltype for when no identifier for such an resulting array type is used as in the example below.
+Asides poor readability, using decltype in such a manner makes assumptions about the constructibility of type T{N} we would not like to make.
+Reminded of the use of () with reference/pointer specifiers in array types and the fact that annotators are in essence pack-identifier bound specifiers, we can use T (\{N\}) for the shorthand form.
+All other ways of specifying array types using T\{N\} do not require this and it is introduced to avoid conflict with the \textit{tuple} annotator.
+
+\begin{minted}{c++}
+
+template<std::size_t N, typename... T{}[sizeof...(T) > N]>
+void fun1(decltype(T{N}())[100]) // ugly-dangerous but legal in context
+{}
+
+template<std::size_t N, typename... T{}[sizeof...(T) > N]>
+void fun2(T ({N})[100]) // when identifier ommited.
+{}
+
+template<std::size_t N, typename... T{}[sizeof...(T) > N]>
+void fun3(T ({N}*)[100]) // when identifier ommited for pointers!
+{}
+
+template<std::size_t N, typename... T{}[sizeof...(T) > N]>
+void fun4(T ({N}&)[100]) // when identifier ommited for references!
+{}
+
+template<std::size_t N, typename... T{}[sizeof...(T) > N]>
+void fun5(T ({N}&&)[100]) // when identifier ommited for rval references!
+{}
+
+template<std::size_t N, typename... T{}[sizeof...(T) > N]>
+void fun6(T{N} const (&array)[100]) // business as usual
+{}
+
+template<std::size_t N, typename... T{}[sizeof...(T) > N]>
+void fun7(T{N} const (*array)[100]) // business as usual
+{}
+\end{minted}
