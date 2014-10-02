@@ -1,0 +1,114 @@
+\p All of the previous examples do not go deep enough into what integral constant expressions can really be used for.
+Such a feature would shine in template metaprogramming libraries beyond simple access by index.
+
+\p The following is an implementation of a structure preserving transformation (\textit{fmap}) as a nested template alias taking advantage of private nested class templates and their partial specializations for use in template meta-programming constructs.
+It can be made quite shorter; however, the purpose here is to illustrate the way through which these features combine.
+In the context of these examples, \textit{atpp\_error} is a type used to specify errors, so that instantiation is always guaranteed; this is a way to design such a library and exploiting SFINAE even out of the context of this proposal.
+
+\begin{minted}{c++}
+template<std::size_t... Atpp_N{3}> // for N, M, K
+struct atpp_ranged_fmap {
+private:
+    /* fmap_: by default this is an "error" */
+    template<std::size_t...{2}, typename...>
+    struct fmap_ {
+        template<template<typename...> class...>
+        using impl = atpp_error;
+    };
+    
+    /* fmap_: exploiting substitutive ordering and SFINAE */
+    template< std::size_t... X{2}[X{1} > X{0}]
+            , typename...T{}[sizeof...(T) >= X{1}] >
+    struct fmap_<X...,T...> {
+        template<template<typename...> class ...Templ_T{2}>
+        using impl
+            = Templ_T{0}<Templ_T{1}<T{X...}>...>;
+    };
+    
+    /* fmap_impl: non-annotated T gets lower matching priority */
+    template< template<typename...> class ...Templ_T{2}
+            , std::size_t...{2}
+            , typename... T >
+    struct fmap_impl
+    { typedef atpp_error type; };
+    
+    /* fmap_impl: exploiting substitutive ordering and SFINAE for T */
+    template< template<typename...> class ...Templ_T{2}
+            , std::size_t... X{2}
+            , typename... T{Atpp_N{0,2}...}[Atpp_N{2}] >
+    struct fmap_impl<Templ_T...,T...>
+    { typedef typename fmap_<X...,T...>::template impl<Templ_T...> type; };
+
+public:
+    template< template<typename...> class ...Templ_T{2}
+            , std::size_t... X{2}
+            , typename... T >
+    using fmap
+        = typename fmap_impl<Templ_T...,X...,T...>::type;
+    
+};
+\end{minted}
+
+\newpage
+
+\p Implementing catamorphisms (left and right folds) can be slightly more complex but not bothersome.
+In the example below we use the same techniques as with \textit{fmap} to implement folding.
+
+\begin{minted}{c++}
+template<std::size_t... Atpp_N{3}> // for N, M, K
+struct atpp_ranged_folds {
+private:
+    
+    template<template<typename...> class F, typename... X{2}>
+    using left
+        = typename F<X{0},X{1}>::type;
+    
+    template<template<typename...> class F, typename... X{2}>
+    using rght
+        = typename F<X{1},X{0}>::type;
+    
+    template< template<template<typename...> class, typename...{2}> class Apl_T
+            , template<typename...> class F>
+    struct fold_ {
+        
+        template<typename... Z>
+        struct impl
+        { typedef atpp_error type; };
+        
+        template<typename... Z{2}> /* exactly 2 parameters */
+        struct impl<Z...>
+        { typedef Apl_T<F,Z...> type; };
+        
+        template<typename... Z{2, sizeof...(T)}> /* > 2 parameters */
+        struct impl<Z...>
+             : impl<Apl_T<F,Z{0,2}...>, Z{2,sizeof...(Z)}...>
+        {};
+    };
+    
+    template< template<template<typename...> class, typename...{2}> class Apl_T
+            , template<typename...> class F
+            , std::size_t... X >
+    struct fold_impl
+    { typedef atpp_error type; };
+    
+    template< template<template<typename...> class, typename...{2}> class Apl_T
+            , template<typename... I{}[sizeof...(I) > 1]> class F
+            , std::size_t... X{2}
+            , typename... T{Atpp_N{0}, Atpp_N{1}}[Atpp_N{2}] >
+    struct fold_impl<Apl_T,F,X...,T...>
+         : fold_<F>::template impl<T{X...}...>
+    {};
+    
+public:
+    template<template<typename...> class F, std::size_t... X{2}, typename... T>
+    using foldl
+        = typename fold_impl<left,F,X...,T...>::type;
+    
+    template<template<typename...> class F, std::size_t... X{2}, typename... T>
+    using foldr
+        = typename fold_impl<rght,F,X...,T...>::type;
+    
+};
+\end{minted}
+
+\newpage
